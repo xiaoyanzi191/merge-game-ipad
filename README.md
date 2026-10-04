@@ -183,7 +183,7 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 
 ### 当前验证事实与限制
 
-用户已完成 Unity Dashboard 和本机官方 CLI 登录，确认符合 Personal 条件并同意条款；Personal 激活及 license status 已成功。Unity 2022.3.62f3/iOS 模块正在安装到项目 work/。用户仅有普通 Apple ID，没有开发者会员或可用 Mac。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
+用户已完成 Unity Dashboard 和本机官方 CLI 登录，确认符合 Personal 条件并同意条款；Personal 激活及 license status 已成功。Unity 2022.3.62f3/iOS 模块已安装到项目 work/。用户仅有普通 Apple ID，没有开发者会员或可用 Mac。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
 
 本地已执行：
 
@@ -299,3 +299,13 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 本机编辑器安装路径限定在 work/unity-editors；许可证和官方登录状态保存在 Unity 专属配置中，已获用户许可。所有签名/许可证资料留在 work/或官方专属配置，不进入公开仓库、源码 ZIP 或 Actions artifact。
 
 参考：[Unity 官方 CLI 安装与登录](https://docs.unity.com/en-us/unity-cli/use-unity-cli)、[官方许可命令](https://github.com/Unity-Technologies/skills/blob/main/skills/unity-cli/references/auth-license-cloud.md)。
+
+### 已完成的真实本机验证与导出
+
+- Linux Unity 2022.3.62f3 已实际运行完整项目。修复加载场景主摄像机干扰拾取、动画回收后碰撞器状态残留，并让 smoke 等待加载遮罩结束后再进行输入验证。
+- [真实 Play Mode 结果](Tests/unity-playmode-result.txt)：115 次断言、16 种行为通过，覆盖原场景启动、无限资源、零容量兼容、100 次实际生产、池化碰撞器恢复、正确摄像机拾取、屏幕坐标拖拽合成、JSON 存档、订单双提交保护/消耗/补充、最高等级物品与安全区。
+- Unity 的 `IosBuild.Export` 已以 iOS 目标和 strict mode 成功执行，产生真实 `Unity-iPhone.xcodeproj`。导出 ZIP 约 215 MiB，CRC/根目录与签名资料排除检查通过。尚未得到可安装的签名 IPA。
+- Editor 的 UIOrientation.Portrait 序列化值为 0；运行时 ScreenOrientation.Portrait 为 1。已按真实 Editor 设置和导出 Info.plist 修正仓库检查。
+- Unity 本次导入更新了随 2022.3.62f3 分发的 2D/Burst/Core/ShaderGraph 等间接包及其序列化默认字段；保留实际验证过的 lock 与设置，没有引入新的第三方框架。
+- Windows 云端 WebGL #2 成功（28:52 含等待，计量构建 19:37，产物 22.14 MB），源代码为 `96a6aa9`。其后本机已修复拾取/回收问题，并完成更完整的真实 Play Mode 检查。
+- 用户已单独授权把未签名 Xcode 导出作为公开 Release 构建输入上传，使用 `.github/workflows/ios-archive.yml` 的 release 模式，避免大文件进入 Git 历史；只在 macOS Runner 上运行 Xcode。

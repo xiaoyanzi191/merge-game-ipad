@@ -129,6 +129,9 @@ namespace LocalMerge.Editor
                 var model = container.Resolve<IGridModel>();
                 var tasks = container.Resolve<TaskPresenter>();
                 if (model.Grid == null || UnityEngine.Object.FindObjectsOfType<TaskUI>().Length < 2) return;
+                // Scene setup creates tasks before the loading overlay is hidden.
+                if (UnityEngine.Object.FindObjectsOfType<Camera>().Any(c =>
+                    c.gameObject.scene.name == "LoadScene" && c.gameObject.activeInHierarchy)) return;
                 var handler = container.Resolve<GridPawnFactoryHandler>();
                 var merge = container.Resolve<MergePresenter>();
                 if (stage == 2)
@@ -151,11 +154,17 @@ namespace LocalMerge.Editor
                     var a = handler.CreateGridPawn(ApplianceType.ApplianceA, 1, new Vector2Int(0, 0));
                     var b = handler.CreateGridPawn(ApplianceType.ApplianceA, 1, new Vector2Int(1, 0));
                     model.UpdateGridPawn(a, false); model.UpdateGridPawn(b, false);
+                    Require(a.BoxCollider.enabled && b.BoxCollider.enabled, "recycled pawns restore colliders");
                     Physics2D.SyncTransforms();
                     var input = UnityEngine.Object.FindObjectOfType<Input.UserInput>();
+                    var inputCamera = (Camera)typeof(Input.UserInput).GetField("_cam", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(input);
+                    Require(inputCamera == views.Cam, "picking uses the merge scene camera");
+                    Canvas.ForceUpdateCanvases();
                     var start = views.Cam.WorldToScreenPoint(a.transform.position);
                     var finish = views.Cam.WorldToScreenPoint(b.transform.position);
                     Invoke(input, "Begin", new Vector2(start.x, start.y));
+                    Require((GridPawn)typeof(Input.UserInput).GetField("_activePawn", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(input) == a,
+                        "screen-coordinate press picks the intended pawn");
                     Invoke(input, "Move", new Vector2(finish.x, finish.y));
                     Invoke(input, "End", true);
                     Require(model.Grid[0, 0] == null && model.Grid[1, 0] is Appliance result && result.Level == 2,

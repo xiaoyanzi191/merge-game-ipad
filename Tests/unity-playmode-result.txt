@@ -1,0 +1,18 @@
+Unity 2022.3.62f3 / Linux / real Play Mode
+SMOKE PASS: local resources initialized
+SMOKE PASS: 8x8 board bootstraps through original scene/DI flow
+SMOKE PASS: generated level stays valid
+SMOKE PASS: 100 productions retain producer and unlimited capacity, including legacy zero capacity
+SMOKE PASS: recycled pawns restore colliders
+SMOKE PASS: picking uses the merge scene camera
+SMOKE PASS: screen-coordinate press picks the intended pawn
+SMOKE PASS: actual screen-coordinate drag/release merges through presenter and factory
+SMOKE PASS: merge persisted to isolated JSON save
+SMOKE PASS: real order becomes ready when its items exist
+SMOKE PASS: order submission completes and persists once
+SMOKE PASS: order consumes exactly the required board items
+SMOKE PASS: next order replaces the completed one
+SMOKE PASS: max-level item survives selection for final order
+SMOKE PASS: actual board camera bounds fit within the safe area
+SMOKE PASS: all five existing starting producers remain available
+Result: PASS

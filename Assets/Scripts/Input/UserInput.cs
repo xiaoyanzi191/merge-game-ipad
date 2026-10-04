@@ -27,7 +27,17 @@ namespace Input
         public static event Action OnGridPawnReleased;
         public static Vector2 PointerPosition { get; private set; }
 
-        private void Awake() => _cam = Camera.main;
+        private void Awake()
+        {
+            // Loading and merge scenes coexist during transitions; bind to this
+            // scene's camera instead of whichever MainCamera is found first.
+            foreach (var camera in FindObjectsOfType<Camera>())
+                if (camera.gameObject.scene == gameObject.scene && camera.CompareTag("MainCamera"))
+                {
+                    _cam = camera;
+                    break;
+                }
+        }
 
         private void Update()
         {
@@ -86,6 +96,7 @@ namespace Input
 
         private void Move(Vector2 position)
         {
+            if (_activePawn == null || _cam == null) return;
             PointerPosition = position;
             float threshold = Mathf.Max(10f, Screen.dpi > 0 ? Screen.dpi * 0.04f : 10f);
             if (!_dragged && Vector2.Distance(position, _pressPosition) >= threshold)

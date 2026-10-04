@@ -10,6 +10,20 @@ namespace Core.GridPawns.Effect
         [field: SerializeField] public SpriteRenderer LastLevelSprite { get; private set; }
         private Tween _shiftTween;
 
+        protected virtual void OnDisable()
+        {
+            _shiftTween?.Kill();
+            _shiftTween = null;
+            transform.DOKill();
+            if (FocusSprite != null)
+            {
+                FocusSprite.transform.DOKill();
+                FocusSprite.transform.localScale = Vector3.zero;
+            }
+            if (LastLevelSprite != null) LastLevelSprite.transform.DOKill();
+            transform.localScale = Vector3.one;
+        }
+
         public void SetLastLevel(bool isLast)
         {
             LastLevelSprite.transform.DOKill();

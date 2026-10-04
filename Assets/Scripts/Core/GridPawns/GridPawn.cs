@@ -30,6 +30,12 @@ namespace Core.GridPawns
 
         private int _level;
 
+        private void OnEnable()
+        {
+            // A recycled pawn must not retain the collider state of an interrupted move.
+            if (BoxCollider != null) BoxCollider.enabled = true;
+        }
+
         public void SetWorldPosition(Vector3 worldPos, bool isAnimOn = false, float animTime = 0.3f)
         {
             // Apply the position with or without animation

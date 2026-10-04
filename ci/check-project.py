@@ -35,7 +35,7 @@ check('get => int.MaxValue' in producer and 'StartCoroutine' not in producer and
 merge=(root/'Assets/Scripts/MVP/Presenters/MergePresenter.cs').read_text()
 check('ReplaceProducer(' not in merge and 'ShouldDestroy(' not in merge,'production does not recycle producer; highest level survives selection')
 settings=(root/'ProjectSettings/ProjectSettings.asset').read_text()
-check('defaultScreenOrientation: 1' in settings and 'iPhoneSdkVersion: 988' in settings and 'iOSTargetOSVersionString: 15.0' in settings,'portrait + iOS device SDK + iOS 15 minimum')
+check('defaultScreenOrientation: 0' in settings and 'iPhoneSdkVersion: 988' in settings and 'iOSTargetOSVersionString: 15.0' in settings,'portrait + iOS device SDK + iOS 15 minimum')
 link=ET.parse(root/'Assets/link.xml')
 check({a.attrib['fullname'] for a in link.findall('assembly')}=={'Assembly-CSharp','Game.DI'},'IL2CPP reflection constructors preserved')
 assets=list((root/'Assets/Resources/Data/ApplianceData/ApplianceALevels').glob('*.asset'))

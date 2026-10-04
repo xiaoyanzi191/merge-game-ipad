@@ -9,6 +9,6 @@ test_unsigned_not_accepted_as_signed (test_artifacts.PackageChecks.test_unsigned
 test_unsigned_structure (test_artifacts.PackageChecks.test_unsigned_structure) ... ok
 
 ----------------------------------------------------------------------
-Ran 9 tests in 0.780s
+Ran 9 tests in 0.499s
 
 OK

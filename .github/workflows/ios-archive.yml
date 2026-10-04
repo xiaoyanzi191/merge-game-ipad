@@ -2,9 +2,12 @@ name: iOS archive from exported project
 on:
   workflow_dispatch:
     inputs:
+      export_release:
+        description: Public release tag containing the reviewed unsigned Xcode export (preferred)
+        required: false
       export_ref:
-        description: Repository ref containing the reviewed unsigned Unity Xcode export
-        required: true
+        description: Alternative repository ref containing the reviewed export
+        required: false
       export_zip:
         description: ZIP path on the export ref
         required: true
@@ -27,16 +30,29 @@ jobs:
           path: source
           persist-credentials: false
       - name: Check out the reviewed export
+        if: inputs.export_ref != '' && inputs.export_release == ''
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ inputs.export_ref }}
           path: export
           persist-credentials: false
+      - name: Download the reviewed release export
+        if: inputs.export_release != '' && inputs.export_ref == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPORT_RELEASE: ${{ inputs.export_release }}
+          EXPORT_ZIP: ${{ inputs.export_zip }}
+        run: |
+          mkdir -p export
+          gh release download "$EXPORT_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern "$EXPORT_ZIP" --dir export
       - name: Unpack Unity Xcode export
         working-directory: source
         env:
           EXPORT_ZIP: ${{ inputs.export_zip }}
+          EXPORT_REF: ${{ inputs.export_ref }}
+          EXPORT_RELEASE: ${{ inputs.export_release }}
         run: |
+          [[ -n "$EXPORT_REF" && -z "$EXPORT_RELEASE" || -z "$EXPORT_REF" && -n "$EXPORT_RELEASE" ]] || { echo "Select exactly one export source"; exit 2; }
           test -d "$DEVELOPER_DIR"
           python3 ci/unpack-ios-export.py ../export "$EXPORT_ZIP" Builds/iOS
       - name: Build device archive and unsigned IPA
