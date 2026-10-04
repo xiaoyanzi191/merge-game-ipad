@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Core.GridSerialization;
+using Core.Helpers;
 using UnityEngine;
 
 namespace Core.Inventories
@@ -16,7 +17,7 @@ namespace Core.Inventories
         {
             var jsonItems = ConvertToInventoryJson(items);
             string json = JsonUtility.ToJson(new InventoryData(jsonItems), true);
-            File.WriteAllText(SavePath, json);
+            BrowserSaveStorage.WriteFile(SavePath, json);
             Debug.Log($"Inventory saved to: {SavePath}");
         }
 
@@ -42,13 +43,13 @@ namespace Core.Inventories
         //  Load inventory from JSON
         public static List<InventoryPawn> LoadInventory()
         {
-            if (!File.Exists(SavePath))
+            string json = BrowserSaveStorage.ReadFile(SavePath);
+            if (json == null)
             {
                 Debug.LogWarning("No inventory save file found!");
                 return new List<InventoryPawn>();
             }
 
-            string json = File.ReadAllText(SavePath);
             InventoryData inventoryData = JsonUtility.FromJson<InventoryData>(json);
             var items = ConvertToInventoryPawn(inventoryData.Items);
             return items;

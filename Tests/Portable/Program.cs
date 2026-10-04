@@ -29,7 +29,7 @@ internal static class Program
         int syntaxFiles=0;
         foreach (var path in Directory.GetFiles(Path.Combine(root,"Assets"),"*.cs",SearchOption.AllDirectories))
         {
-            foreach(var symbols in new[]{new[]{"UNITY_EDITOR","UNITY_STANDALONE","DOTWEEN"},new[]{"UNITY_IOS","DOTWEEN"}})
+            foreach(var symbols in new[]{new[]{"UNITY_EDITOR","UNITY_STANDALONE","DOTWEEN"},new[]{"UNITY_IOS","DOTWEEN"},new[]{"UNITY_WEBGL","DOTWEEN"}})
             {
                 var tree=CSharpSyntaxTree.ParseText(File.ReadAllText(path),new CSharpParseOptions(LanguageVersion.CSharp9,preprocessorSymbols:symbols),path);
                 var errors=tree.GetDiagnostics().Where(d=>d.Severity==DiagnosticSeverity.Error).ToArray();
@@ -37,7 +37,7 @@ internal static class Program
             }
             syntaxFiles++;
         }
-        Check(true,$"C# 9 syntax: {syntaxFiles} files, editor and iOS symbols (not Unity compilation)");
+        Check(true,$"C# 9 syntax: {syntaxFiles} files, editor/iOS/WebGL symbols (not Unity compilation)");
         var producer=new Producer();
         var data=new ProducerLevelDataSO();
         Set(data,"Capacity",10);Set(data,"GeneratedApplianceType",ApplianceType.ApplianceA);

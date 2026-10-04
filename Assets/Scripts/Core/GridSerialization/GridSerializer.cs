@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Core.GridPawns;
 using Core.GridPawns.Enum;
+using Core.Helpers;
 using UnityEngine;
 
 namespace Core.GridSerialization
@@ -12,9 +13,8 @@ namespace Core.GridSerialization
 
         public static GridInfo SerializeToGridInfo()
         {
-            if (!File.Exists(PersistentPath)) return null;
-
-            string jsonString = File.ReadAllText(PersistentPath);
+            string jsonString = BrowserSaveStorage.ReadFile(PersistentPath);
+            if (jsonString == null) return null;
             var gridJson = JsonUtility.FromJson<GridJson>(jsonString);
             var (gridPawnTypes, gridPawnLevels, gridPawnCapacities) = ProcessGridJson(gridJson);
             return new GridInfo(gridPawnTypes, gridPawnLevels, gridPawnCapacities);
@@ -46,7 +46,7 @@ namespace Core.GridSerialization
 
                 var gridJson = ConvertToGridJson(columnCount, rowCount, jsonPawn);
                 string json = JsonUtility.ToJson(gridJson, true);
-                File.WriteAllText(PersistentPath, json);
+                BrowserSaveStorage.WriteFile(PersistentPath, json);
                 Debug.Log("JSON saved to: " + PersistentPath);
             }
             catch (Exception e)

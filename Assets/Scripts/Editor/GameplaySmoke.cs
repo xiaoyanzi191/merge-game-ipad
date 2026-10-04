@@ -17,6 +17,8 @@ using MVP.Views;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace LocalMerge.Editor
 {
@@ -93,6 +95,52 @@ namespace LocalMerge.Editor
             return target.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(target, args);
         }
 
+        private static void VerifyRapidPointerTaps(IGridModel model, GridPawnFactoryHandler handler,
+            GridView views, Producer producer)
+        {
+            var input = UnityEngine.Object.FindObjectOfType<Input.UserInput>();
+            var press = (InputAction)typeof(Input.UserInput).GetField("_pressAction", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(input);
+            var position = (InputAction)typeof(Input.UserInput).GetField("_positionAction", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(input);
+            var mouse = InputSystem.AddDevice<Mouse>("SmokeMouse");
+            var touch = InputSystem.AddDevice<Touchscreen>("SmokeTouch");
+            Canvas.ForceUpdateCanvases();
+            Physics2D.SyncTransforms();
+            var screen = views.Cam.WorldToScreenPoint(producer.transform.position);
+            var point = new Vector2(screen.x, screen.y);
+            try
+            {
+                press.ApplyBindingOverride(0, mouse.path + "/leftButton"); press.ApplyBindingOverride(1, "");
+                position.ApplyBindingOverride(0, mouse.path + "/position"); position.ApplyBindingOverride(1, "");
+                for (int i = 0; i < 5; i++)
+                {
+                    // Down and up deliberately land in the same Input System update.
+                    InputSystem.QueueStateEvent(mouse, new MouseState { position = point }.WithButton(MouseButton.Left));
+                    InputSystem.QueueStateEvent(mouse, new MouseState { position = point });
+                    InputSystem.Update();
+                    var created = model.Grid.Cast<GridPawn>().OfType<Appliance>().Single();
+                    Require(created != null, "same-update mouse tap produces exactly one item");
+                    model.UpdateGridPawn(created, true); handler.DestroyPawn(created);
+                }
+                press.ApplyBindingOverride(0, ""); press.ApplyBindingOverride(1, touch.path + "/primaryTouch/press");
+                position.ApplyBindingOverride(0, ""); position.ApplyBindingOverride(1, touch.path + "/primaryTouch/position");
+                InputSystem.QueueStateEvent(touch, new TouchState { touchId = 1, position = point, phase = UnityEngine.InputSystem.TouchPhase.Began });
+                InputSystem.QueueStateEvent(touch, new TouchState { touchId = 1, position = point, phase = UnityEngine.InputSystem.TouchPhase.Ended });
+                InputSystem.Update();
+                var item = model.Grid.Cast<GridPawn>().OfType<Appliance>().Single();
+                Require(item != null, "same-update primary touch tap produces exactly one item");
+                model.UpdateGridPawn(item, true); handler.DestroyPawn(item);
+                InputSystem.QueueStateEvent(touch, new TouchState { touchId = 2, position = point, phase = UnityEngine.InputSystem.TouchPhase.Began });
+                InputSystem.QueueStateEvent(touch, new TouchState { touchId = 2, position = point, phase = UnityEngine.InputSystem.TouchPhase.Canceled });
+                InputSystem.Update();
+                Require(!model.Grid.Cast<GridPawn>().OfType<Appliance>().Any(), "canceled primary touch does not produce an item");
+            }
+            finally
+            {
+                press.RemoveAllBindingOverrides(); position.RemoveAllBindingOverrides();
+                InputSystem.RemoveDevice(mouse); InputSystem.RemoveDevice(touch);
+            }
+        }
+
         private static void Tick()
         {
             if (!SessionState.GetBool(Key + "Active", false)) return;
@@ -140,6 +188,7 @@ namespace LocalMerge.Editor
                     Require(model.Grid.GetLength(0) == 8 && model.Grid.GetLength(1) == 8, "8x8 board bootstraps through original scene/DI flow");
                     var producer = model.Grid.Cast<GridPawn>().OfType<Producer>().First();
                     producer.Capacity = 0;
+                    VerifyRapidPointerTaps(model, handler, views, producer);
                     Invoke(merge, "OnTouched", producer);
                     for (int i = 0; i < 100; i++)
                     {

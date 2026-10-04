@@ -4,7 +4,7 @@ PASS Unity project directory: ProjectSettings
 PASS Unity editor version and official revision pinned
 PASS UniTask manifest matches original lock commit
 PASS bootstrap/main/merge scenes exist in build order
-PASS 579 unique Unity asset GUIDs
+PASS 590 unique Unity asset GUIDs
 PASS all scripts have committed .meta files
 PASS producer capacity fixed, no recovery coroutine
 PASS production does not recycle producer; highest level survives selection

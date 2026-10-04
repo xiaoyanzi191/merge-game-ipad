@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#edf3e9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="合成小院">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <title>合成小院</title>
+  <style>
+    * { box-sizing: border-box; }
+    html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#edf3e9; font-family:system-ui,sans-serif; }
+    body { display:flex;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    #game { width:min(100%,calc((100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))*0.75));height:100%;position:relative; }
+    canvas { display:block;width:100%;height:100%;touch-action:none;outline:none; }
+    #cover { position:absolute;inset:0;display:grid;place-content:center;gap:18px;text-align:center;padding:24px;background:#edf3e9;color:#294c40;z-index:2; }
+    h1 { margin:0;font-size:36px; } p { margin:0;line-height:1.7; }
+    progress { width:min(360px,75vw);height:14px;accent-color:#6c9574; }
+    #cover[hidden] { display:none; }
+    #note { position:absolute;bottom:4px;left:0;width:100%;font-size:11px;text-align:center;color:#3b5b48;pointer-events:none; }
+    button { padding:14px 24px;border:0;border-radius:12px;background:#476f58;color:white;font-size:17px;cursor:pointer; }
+  </style>
+</head>
+<body>
+  <main id="game">
+    <canvas id="unity-canvas" tabindex="-1" aria-label="合成棋盘"></canvas>
+    <section id="cover">
+      <h1>合成小院</h1>
+      <p id="status" role="status">正在准备游戏…</p>
+      <progress id="progress" max="1" value="0"></progress>
+      <p>首次下载完成后，可以离线打开。<br>Safari 分享菜单 → 添加到主屏幕</p>
+      <button id="retry" hidden>重新加载</button>
+    </section>
+    <div id="note" role="status"></div>
+  </main>
+  <script>
+    const statusText = document.getElementById('status');
+    const progress = document.getElementById('progress');
+    const note = document.getElementById('note');
+    document.getElementById('retry').addEventListener('click', () => location.reload());
+    navigator.serviceWorker?.addEventListener('message', event => {
+      if (event.data?.type === 'cache-progress') {
+        statusText.textContent = '正在下载离线游戏… ' + event.data.done + '/' + event.data.total;
+        progress.value = event.data.done / event.data.total * 0.5;
+      }
+    });
+    window.addEventListener('merge-save-status', event => {
+      note.textContent = event.detail.ok ? '存档已保存在此设备' : '存档保存失败，请检查浏览器存储空间';
+      note.style.color = event.detail.ok ? '#3b5b48' : '#a03125';
+    });
+    async function start() {
+      if (!('serviceWorker' in navigator)) throw new Error('当前浏览器无法准备离线游戏，请使用支持离线缓存的 Safari。');
+      statusText.textContent = '正在准备离线文件…';
+      const registration = await navigator.serviceWorker.register('sw.js', {scope: './'});
+      let timer;
+      try {
+        await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((resolve,reject) => {
+            timer=setTimeout(() => reject(new Error('离线文件准备超时，请联网重新加载。')),180000);
+            const worker=registration.installing;
+            if (worker) {
+              const check=() => { if (worker.state === 'redundant') reject(new Error('离线文件准备失败，请检查网络和浏览器存储空间。')); };
+              worker.addEventListener('statechange',check);
+              check();
+            }
+          })
+        ]);
+      } finally { clearTimeout(timer); }
+      if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, {once:true}));
+      statusText.textContent = '正在打开游戏…';
+      const loader = document.createElement('script');
+      loader.src = 'Build/{{{ LOADER_FILENAME }}}';
+      await new Promise((resolve,reject) => { loader.onload=resolve; loader.onerror=() => reject(new Error('游戏文件加载失败，请重新联网下载。')); document.body.appendChild(loader); });
+      const unity = await createUnityInstance(document.getElementById('unity-canvas'), {
+        dataUrl: 'Build/{{{ DATA_FILENAME }}}',
+        frameworkUrl: 'Build/{{{ FRAMEWORK_FILENAME }}}',
+        codeUrl: 'Build/{{{ CODE_FILENAME }}}',
+        streamingAssetsUrl: 'StreamingAssets',
+        companyName: 'LocalMerge', productName: 'Merge Sandbox', productVersion: '1.0',
+        autoSyncPersistentDataPath: true,
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+        showBanner: (message, type) => { if (type === 'error') { note.textContent='游戏加载遇到问题：'+message; note.style.color='#a03125'; } }
+      }, value => { progress.value = 0.5 + value * 0.5; });
+      document.getElementById('cover').hidden = true;
+      document.getElementById('unity-canvas').focus();
+      if (!note.textContent) note.textContent = '离线文件已准备好';
+    }
+    start().catch(error => {
+      statusText.textContent = error.message;
+      document.getElementById('retry').hidden = false;
+      progress.hidden = true;
+    });
+  </script>
+</body>
+</html>

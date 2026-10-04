@@ -1,0 +1,7 @@
+{
+  "id": "./", "name": "合成小院", "short_name": "合成小院",
+  "start_url": "./", "scope": "./", "display": "standalone",
+  "orientation": "portrait", "lang": "zh-CN",
+  "background_color": "#edf3e9", "theme_color": "#edf3e9",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

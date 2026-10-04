@@ -18,6 +18,10 @@ namespace Input
         private bool _dragged;
         private bool _usingTouch;
         private int _touchId;
+        private Mouse _gestureMouse;
+        private Touchscreen _gestureTouchscreen;
+        private InputAction _pressAction;
+        private InputAction _positionAction;
         private static bool _isInputOn = true;
         private readonly List<RaycastResult> _uiHits = new List<RaycastResult>();
 
@@ -37,24 +41,64 @@ namespace Input
                     _cam = camera;
                     break;
                 }
+
+            // Actions preserve press/release edges even when both arrive before Update.
+            _pressAction = new InputAction("MergePress", InputActionType.Button);
+            _pressAction.AddBinding("<Mouse>/leftButton");
+            _pressAction.AddBinding("<Touchscreen>/primaryTouch/press");
+            _pressAction.performed += OnPress;
+            _pressAction.canceled += OnRelease;
+            _positionAction = new InputAction("MergePosition", InputActionType.PassThrough);
+            _positionAction.AddBinding("<Mouse>/position");
+            _positionAction.AddBinding("<Touchscreen>/primaryTouch/position");
+            _positionAction.performed += OnPosition;
+        }
+
+        private void OnEnable()
+        {
+            _positionAction?.Enable();
+            _pressAction?.Enable();
+        }
+
+        private void OnPress(InputAction.CallbackContext context)
+        {
+            if (_activePawn != null) return;
+            _gestureTouchscreen = context.control.device as Touchscreen;
+            _gestureMouse = context.control.device as Mouse;
+            _usingTouch = _gestureTouchscreen != null;
+            if (_usingTouch)
+            {
+                var touch = _gestureTouchscreen.primaryTouch;
+                _touchId = touch.touchId.ReadValue();
+                Begin(touch.position.ReadValue());
+            }
+            else if (_gestureMouse != null) Begin(_gestureMouse.position.ReadValue());
+        }
+
+        private void OnPosition(InputAction.CallbackContext context)
+        {
+            if (_activePawn == null) return;
+            if (context.control.device == (_usingTouch ? (InputDevice)_gestureTouchscreen : _gestureMouse))
+                Move(context.ReadValue<Vector2>());
+        }
+
+        private void OnRelease(InputAction.CallbackContext context)
+        {
+            if (_activePawn == null) return;
+            if (_usingTouch)
+            {
+                var touch = _gestureTouchscreen?.primaryTouch;
+                if (touch == null || touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
+                { End(false); return; }
+                if (touch.phase.ReadValue() != UnityEngine.InputSystem.TouchPhase.None)
+                    Move(touch.position.ReadValue());
+            }
+            else if (_gestureMouse != null) Move(_gestureMouse.position.ReadValue());
+            End(true);
         }
 
         private void Update()
         {
-            var touch = Touchscreen.current?.primaryTouch;
-            if (touch != null && touch.press.wasPressedThisFrame && _activePawn == null)
-            {
-                _usingTouch = true;
-                _touchId = touch.touchId.ReadValue();
-                Begin(touch.position.ReadValue());
-            }
-            else if (_activePawn == null && touch?.press.isPressed != true &&
-                     Mouse.current?.leftButton.wasPressedThisFrame == true)
-            {
-                _usingTouch = false;
-                Begin(Mouse.current.position.ReadValue());
-            }
-
             if (_activePawn == null) return;
             if (!_isInputOn || !_activePawn.gameObject.activeInHierarchy)
             {
@@ -64,6 +108,7 @@ namespace Input
 
             if (_usingTouch)
             {
+                var touch = _gestureTouchscreen?.primaryTouch;
                 if (touch == null || touch.touchId.ReadValue() != _touchId)
                 {
                     End(false);
@@ -72,13 +117,13 @@ namespace Input
                 Move(touch.position.ReadValue());
                 if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
                     End(false);
-                else if (touch.press.wasReleasedThisFrame || !touch.press.isPressed)
+                else if (!touch.press.isPressed)
                     End(true);
             }
-            else if (Mouse.current != null)
+            else if (_gestureMouse != null)
             {
-                Move(Mouse.current.position.ReadValue());
-                if (Mouse.current.leftButton.wasReleasedThisFrame || !Mouse.current.leftButton.isPressed)
+                Move(_gestureMouse.position.ReadValue());
+                if (!_gestureMouse.leftButton.isPressed)
                     End(true);
             }
         }
@@ -126,7 +171,17 @@ namespace Input
             _activePawn = null;
         }
 
-        private void OnDisable() => End(false);
+        private void OnDisable()
+        {
+            End(false);
+            _pressAction?.Disable();
+            _positionAction?.Disable();
+        }
+        private void OnDestroy()
+        {
+            _pressAction?.Dispose();
+            _positionAction?.Dispose();
+        }
         private void OnApplicationFocus(bool focused) { if (!focused) End(false); }
         private void OnApplicationPause(bool paused) { if (paused) End(false); }
         public static void SetInputState(bool isInputOn) => _isInputOn = isInputOn;

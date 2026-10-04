@@ -17,3 +17,4 @@ jobs:
       - run: python3 ci/check-project.py
       - run: dotnet run --project Tests/Portable/Portable.csproj -- .
       - run: python3 -m unittest discover -s Tests -p "test_*.py" -v
+      - run: node Tests/web-offline.test.cjs

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Core.Tasks;
+using Core.Helpers;
 using MVP.Models.Interface;
 using UnityEngine;
 
@@ -59,15 +60,13 @@ namespace MVP.Models
         private void SaveCompletedTasks()
         {
             string json = string.Join(",", _completedTaskIDs.Select(id => id.ToString()).ToArray());
-            PlayerPrefs.SetString("CompletedTasks", json);
-            PlayerPrefs.Save();
+            BrowserSaveStorage.WriteCompletedTasks(json);
         }
 
         private List<int> LoadCompletedTasks()
         {
-            if (!PlayerPrefs.HasKey("CompletedTasks")) return new List<int>();
-
-            string json = PlayerPrefs.GetString("CompletedTasks");
+            string json = BrowserSaveStorage.ReadCompletedTasks();
+            if (json == null) return new List<int>();
             return json.Split(',').Where(s => !string.IsNullOrEmpty(s)).Select(int.Parse).ToList();
         }
     }

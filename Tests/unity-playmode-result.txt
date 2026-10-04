@@ -1,6 +1,112 @@
-Unity 2022.3.62f3 / Linux / real Play Mode
+Unity 2022.3.62f3 actual Play Mode: 122 assertions PASS
 SMOKE PASS: local resources initialized
 SMOKE PASS: 8x8 board bootstraps through original scene/DI flow
+SMOKE PASS: same-update mouse tap produces exactly one item
+SMOKE PASS: same-update mouse tap produces exactly one item
+SMOKE PASS: same-update mouse tap produces exactly one item
+SMOKE PASS: same-update mouse tap produces exactly one item
+SMOKE PASS: same-update mouse tap produces exactly one item
+SMOKE PASS: same-update primary touch tap produces exactly one item
+SMOKE PASS: canceled primary touch does not produce an item
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
+SMOKE PASS: generated level stays valid
 SMOKE PASS: generated level stays valid
 SMOKE PASS: 100 productions retain producer and unlimited capacity, including legacy zero capacity
 SMOKE PASS: recycled pawns restore colliders
@@ -15,4 +121,3 @@ SMOKE PASS: next order replaces the completed one
 SMOKE PASS: max-level item survives selection for final order
 SMOKE PASS: actual board camera bounds fit within the safe area
 SMOKE PASS: all five existing starting producers remain available
-Result: PASS

@@ -322,3 +322,34 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 - [GoodsSort](https://github.com/AmanitaDev/GoodsSort)：Match-3 项目，可参考布局；README 列出 GUI Pro、Odin 等资源，其源码 MIT 不等于这些素材都可直接搬用。
 
 本次只完成调查，尚未下载或混入新的美术素材。
+
+### Linux 本人签名准备（2026-10-05）
+
+用户已本人完成 Apple 免费开发者账号准备，没有加入付费计划。现准备社区开源工具路线，尚未使用 Apple ID 登录工具、生成本人签名或访问设备。
+
+- [iloader 2.3.5](https://github.com/nab138/iloader/releases/tag/v2.3.5) 的官方发布 DEB 下载至本项目 `work/iloader-2.3.5/` 并仅解压，没有系统安装。SHA256 `febd37874ece0e5880796e84cafced1f4a478537dd3d65cab20c0260e39f6ed8` 与发布资产摘要一致，动态运行依赖检查通过。
+- 检查了该版本的账号、设备选择、配置存储代码以及 isideload 0.4.0 源码（源提交 `52b504c2cd706a9e415109b0be9e137168034f5e`）。工具不是 Apple 官方软件；这些检查不等于完整安全审计，也不等于账号登录或侧载已成功。
+- [anisette-v3-server](https://github.com/Dadoum/anisette-v3-server) 维护者镜像的 amd64 manifest 固定为 `sha256:97f5fd1e6cb060f8fbda65d3e836e056c4d744e32a8372d954faf892fc68b544`，验证镜像层摘要后，仅提取服务程序至 `work/anisette-local/`。程序报告 v2.2.2，SHA256 `246213c1c20c27a472a5199a25e7d0cbdde9bfcb85bc36724afaf3758afe1e6e`；未修改 Docker 权限或创建容器。
+- 服务初始化所需库来自 Apple 官方 `apps.mzstatic.com` 的 Apple Music Android APK，未修改这些库；运行目录、状态和日志均限制在本项目 `work/anisette-local/`。服务只监听 `127.0.0.1:16969`，`/v3/client_info` 实际返回 200，通过 v3 接口检查。此过程未使用用户 Apple ID。
+- `work/iloader-2.3.5/open-iloader-login.sh` 将 XDG/TMP 状态限定在权限为 700 的私有项目目录，并隔离系统 D-Bus 钥匙串；只用本机验证服务，默认不记住密码。最初依赖 USB 环境变量的隔离失效：iloader 的设备列表使用 `UsbmuxdAddr::default()`，忽略环境变量，尝试只读连接 lockdown 后报错。已关闭本次工具，并改用系统已有 bubblewrap 的独立挂载命名空间隐藏 `/run/usbmuxd`，根文件系统只读、仅本工具私有目录可写。子进程实际验证该路径不再是 socket，脚本语法检查通过；修正后的图形入口未重启，不能声称已验证界面登录。
+- 用户已明确授权使用本人 Apple ID 在此本机工具中登录，为本游戏创建个人开发签名资料并保存在项目私有目录，完成后仅安装到本人确认的目标 iPad。密码/验证码由本人在工具中输入，不进入聊天或命令。已有证书不得自动吊销；目标设备和安装范围还需在安装时确认。
+- 本人登录尝试在取得 Xcode app token 时被 Apple 拒绝（`-22411: This action cannot be completed at this time`），未完成 DeveloperSession、签名或安装。该错误在 [iloader #363](https://github.com/nab138/iloader/issues/363) 有未解决的上游报告；重新检查维护者最新发布仍为 v2.3.5，没有可确认的自动修复，不重复提交密码。用户要求保持设备现有账号，本人签名账号另用；账号不同本身不能证明是错误原因，不要求退出或更换设备账号。
+- 用户已要求沿用本项目后续工作的授权，不重复询问已授权的准备、签名和安装操作。授权仍限定本游戏和确认的目标 iPad，不涉及其他账号、应用或文件。密码不得写入源码、公开日志、GitHub 或长期记忆；本人验证码和设备信任等交互仍需在出现时完成。
+- [Apple 官方免费 Personal Team 说明](https://developer.apple.com/help/account/basics/about-your-developer-account)规定开发描述文件有效期为 7 天，到期需要重新部署。离线、个人自用不会免除原生安装签名要求；当前构建产物仍为未签名 IPA。
+
+任何账号、证书、私钥、描述文件、ADI 状态或相关日志都不得提交到公开仓库、Release 或 Actions。只有公开的游戏源码与已检查的无签名构建资料可公开。
+
+### 离线主屏幕候选版（2026-10-05）
+
+用户已选择优先通过 Safari 添加到主屏幕、离线游玩，不再等待 Apple 签名。保留 Unity 的原玩法、场景、MVP/DI/资源体系，增加 WebGL 导出和离线页面；不是另一份重写的 JavaScript 游戏。
+
+- 官方 WebGL 模块安装到已有的工作区 Unity 2022.3.62f3。`LocalMerge.Editor.WebBuild.Export` 已真实成功，8 个静态文件约 42.7 MiB，ZIP 约 13.45 MiB；导出不需要 Apple 账号。
+- 原型美术保留。页面在横向窗口中保持竖屏游戏区域，包含安全区、主屏幕 manifest、原创图标和完整缓存；首次需要联网下载全部游戏文件。
+- 浏览器 JSON 存档同步备份到本地存储，Unity 的 `autoSyncPersistentDataPath` 负责 IndexedDB 文件同步；原生文件/PlayerPrefs 行为保持不变。缓存下载失败不会替换已可用的版本，更新不会抢占正在运行的旧游戏，只清理本应用 scope 的旧缓存。
+- 实测发现逐帧检测可能漏掉同一轮更新中的快速按下/释放，已改为现有 Input System 的输入事件。实际 Unity Play Mode 新结果为 **122 次断言、19 种行为通过**，包含连续快速鼠标点击、触控点击和触控取消；见 `Tests/unity-playmode-result.txt`。
+- 本机浏览器实际执行连续快速生产、2→4→8 拖拽合成、订单提交/消耗；关闭本机 HTTP 服务器后重新打开，游戏仍能启动，已完成订单进度也恢复。截图保留在工作区 outputs/。这不是 iPad/Safari 真机测试。
+- `node Tests/web-offline.test.cjs`：10 项真实 JS 持久化/缓存行为检查通过，覆盖最新存档、保存失败反馈、离线资源与导航、完整下载、失败恢复及其他 scope 的缓存保护。
+- `ci/prepare-web.py` 冻结导出资源与版本；`ci/unpack-web.py` 拒绝路径穿越、重复路径、符号链接和签名资料。`.github/workflows/web-publish.yml` 使用固定到提交的 GitHub 官方 Pages actions，部署已检查的公开静态 ZIP；当前 HTTPS 发布结果待验证。
+- 原生 IPA 仍为先前 `e1c7c84` 的无签名产物，不包含本次快速点击修复；当前主要交付目标为离线网页。若以后继续原生安装，应以最新源码重新导出并由本人签名。
+
+兼容边界：[Unity 2022.3 官方文档](https://docs.unity3d.com/2022.3/Documentation/Manual/webgl-browsercompatibility.html)不保证移动设备 WebGL 支持。因此仍需在目标 iPad Safari 中检查实际触控、存档以及关闭网络后从主屏幕重开，不能用桌面模拟代替真机验证。首次添加到主屏幕后，应联网打开该主屏幕入口，等游戏下载完成，再测试离线。浏览器网站数据被清理时，本地存档和缓存也会被清理。

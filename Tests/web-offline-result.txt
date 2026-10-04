@@ -1,0 +1,11 @@
+PASS missing web save remains absent
+PASS rapid writes restore the latest complete board
+PASS empty completed-order save differs from a missing save
+PASS storage failure is reported instead of claiming a durable save
+PASS all game assets are cached before installation succeeds
+PASS updates do not replace resources underneath a running game
+PASS activation preserves unrelated site and other game-scope caches
+PASS cached game binary loads without any network request
+PASS home-screen navigation works offline with query parameters
+PASS incomplete download discards only the new cache and preserves the old game
+TOTAL 10 web persistence/cache checks PASS

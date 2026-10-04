@@ -1,4 +1,4 @@
-PASS C# 9 syntax: 154 files, editor and iOS symbols (not Unity compilation)
+PASS C# 9 syntax: 156 files, editor/iOS/WebGL symbols (not Unity compilation)
 PASS 10,000 productions and zero-capacity legacy save stay unlimited
 PASS producer retains 80/20 level distribution, deterministic seed 42
 PASS equal type and level can merge
