@@ -172,8 +172,7 @@ The grid state is stored in **`grid_data.json`**, allowing easy modifications.
 另外包含粒子示例、TMP 资源及 SerializedCollections 示例，它们不加入构建场景。
 
 上游实际版本为 Unity **2022.3.8f1**。本副本采用同一 LTS 分支的 **2022.3.62f3**（官方 revision `96770f904ca7`），用于较新的 macOS/Xcode 构建。
-此次尚未执行 Unity 导入迁移，因此版本兼容性仍须由下面的真实 Unity 验证确认。
-依赖保持现有版本：Input System 1.6.3、URP 14.0.8、TMP 3.0.6、Test Framework 1.1.33；UniTask 固定到上游 lock 已记录的提交 `8042b29ff87dd5506d7aad72bd6d8d7405985f27`。
+已完成真实 Unity 导入、Play Mode 验证和 iOS 工程导出。Input System 1.6.3、TMP 3.0.6、Test Framework 1.1.33 保留原版；URP/Core/ShaderGraph 等随该 LTS 补丁解析的版本以已验证的 `Packages/packages-lock.json` 为准。UniTask 固定到上游 lock 已记录的提交 `8042b29ff87dd5506d7aad72bd6d8d7405985f27`。
 未下载新的第三方游戏二进制或签名工具。保留上游已有 DOTween DLL 和 SerializedCollections 源码。
 
 根许可证为 MIT，保留原作者版权。README 原作者说明为非商业项目；本次用途为个人本地游玩。
@@ -183,7 +182,7 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 
 ### 当前验证事实与限制
 
-用户已完成 Unity Dashboard 和本机官方 CLI 登录，确认符合 Personal 条件并同意条款；Personal 激活及 license status 已成功。Unity 2022.3.62f3/iOS 模块已安装到项目 work/。用户仅有普通 Apple ID，没有开发者会员或可用 Mac。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
+用户已完成 Unity Dashboard 和本机官方 CLI 登录，确认符合 Personal 条件并同意条款；Personal 激活及 license status 已成功。Unity 2022.3.62f3/iOS 模块已安装到项目 work/，真实 Xcode 工程已导出。GitHub macOS/Xcode 归档成功，已生成真实未签名 IPA。用户仅有普通 Apple ID，没有开发者会员或可用 Mac；尚未进行本人 Apple 签名或设备安装。
 
 本地已执行：
 
@@ -192,10 +191,10 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 - 上述检查还使用 Roslyn 按 C# 9、Editor/iOS 两组条件符号解析所有 Assets C# 文件；**这是语法检查，不是完整 Unity 编译**。
 - `python3 -m unittest discover -s Tests -p 'test_*.py' -v`：9 项打包/解压防护测试通过，见 [原始结果](Tests/artifact-result.txt)。测试使用临时合成结构，不生成可安装游戏 IPA，也不连接设备。
 - `git diff --check`、工作流 YAML 解析、3 个 Bash 构建脚本语法检查通过。
-- 布局数值验证覆盖 768×1024、810×1080、834×1194、820×1180、1024×1366、744×1133，以及 390×844。这里使用逻辑点验证棋盘与点击尺寸；实际 Unity 渲染、字体、触控、多指取消和真机安全区尚待验证。
+- 布局数值验证覆盖 768×1024、810×1080、834×1194、820×1180、1024×1366、744×1133，以及 390×844。真实 Unity 检查还验证了 768×1024 GameView 的摄像机拾取、拖放与棋盘边界；真机渲染、字体、实际触控、多指取消和设备安全区尚待安装后验证。
 
 .NET 检查工具位于本次工作区的 `work/`，未加入仓库，也不修改系统 PATH。
-其首次启动自动生成的 localhost 开发证书已精确删除；后续运行禁用证书生成。未改动连接的 iPhone、配对、应用、开发者模式或信任设置。
+其首次启动自动生成的 localhost 开发证书已精确删除；后续运行禁用证书生成。未改动连接的 iPhone/iPad、配对、应用、开发者模式或信任设置。
 
 ### GitHub Actions 构建入口
 
@@ -203,10 +202,11 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 
 1. **Source checks**（`.github/workflows/source-checks.yml`）：Linux Runner，执行仓库、可移植逻辑和 IPA 防护测试，无需 Unity 许可证。
 2. **iOS build**（`.github/workflows/ios-build.yml`）：默认使用 `macos-15-intel` 与 Xcode 16.4，执行真实 Unity 编译/Play Mode 验证，然后导出 iOS、Xcode archive、IPA 和 Xcode 工程压缩包。
+3. **iOS archive from exported project**（`.github/workflows/ios-archive.yml`）：本机已激活的 Unity 导出工程，macOS Runner 只执行 Xcode 归档，不需要云端 Unity 许可证。优先输入公开 Release tag `ios-export-input` 和 `ios-export.zip`。
 
 真实 Unity 验证入口：`LocalMerge.Editor.GameplaySmoke.Run`。它从原有 LoadScene 启动，通过主菜单进入棋盘，检查 100 次生产、实际屏幕坐标拾取/拖放合成、订单连点提交、存档、最高等级物品及棋盘视野。
 测试使用随机独立的应用名称隔离存档，只允许在专用 batchmode 工作目录运行；失败返回非零退出码。
-**该测试已写入，但本次未运行，不能以测试代码存在代替运行证据。**
+**该测试已在本机真实 Unity 中通过，115 次断言的原始结果保存在 `Tests/unity-playmode-result.txt`。**
 
 `runner=hosted-pro` 必须由本人将合法 Unity Pro 构建凭据存入仓库 Actions Secrets：`UNITY_EMAIL`、`UNITY_PASSWORD`、`UNITY_SERIAL`。
 只接受官方 Unity macOS 安装包，检查 Unity Developer ID 安装签名；授权在临时 Runner 中激活并在结束时归还。
@@ -257,7 +257,7 @@ Linux 不能用原生 Xcode 完成 archive/Apple 签名。工作流文件已配�
 
 ### 签名 IPA 生成后的 Linux USB 安装
 
-当前连接的是用户声明的 iPhone；没有读取设备标识或改变设备状态。需要安装时先确认具体目标 iPhone/iPad 和 UDID，不能凭“只有一个 USB 设备”猜测。
+用户最新声明连接的是 iPad；没有读取设备标识或改变设备状态。需要安装时先确认具体目标 iPhone/iPad 和 UDID，不能凭“只有一个 USB 设备”猜测。
 只用自己的合法 Apple 签名。Apple ID 登录、双重认证、设备开发者模式和“信任”由本人完成。
 
 `ci/install-signed-ipa.py` 已准备好：必须显式传入 IPA 和 UDID，未签名包在接触设备前就被拒绝。
@@ -274,27 +274,26 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 
 ### 继续工作的必要输入
 
-代码和构建入口已就绪；GitHub 副本已推送，官方 Unity 云项目也已创建并连接。仍须完成：运行真实 Unity 验证并修复可能的导入/构建问题；准备可行的本人 Apple 签名环境；最后生成并安装 IPA。
-目前不能将状态标记为“已获得 IPA”或“只剩 Apple 签名”。
+代码改造、真实 Unity 验证、iOS 工程导出和 macOS 设备版归档已完成；GitHub 副本已推送，真实未签名 IPA 已生成。编译阶段完成；安装前只剩本人 Apple 签名，随后才能进行 USB 安装和真机验证。连接 USB 不会自动提供有效签名。
 
 ### 云端接续状态（2026-10-04）
 
-- GitHub 副本：<https://github.com/xiaoyanzi191/merge-game-ipad>。游戏改造源代码提交为 `86385c6`。
-- [GitHub Source checks](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37184999182) 已通过：仓库完整性、可移植逻辑及 IPA 防护测试三步均成功。它仍不等于 Unity 引擎编译。
+- GitHub 副本：<https://github.com/xiaoyanzi191/merge-game-ipad>。当前已验证并导出的游戏源代码提交为 `e1c7c84`。
+- [最新 GitHub Source checks](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37212142257) 已通过：仓库完整性、可移植逻辑及 IPA 防护测试三步均成功。真实 Unity 检查另见下方结果。
 - Unity 项目名称 `Merge Game iPad`。Dashboard 显示 Free tier，包括 100 Mac Standard Minutes。未升级付费计划。
 - 公开 HTTPS 拉取被 Unity 判为不可访问，已按用户单独授权添加只读部署密钥，并通过 SSH 成功连接本副本。密钥仅作用于该仓库，GitHub 验证 `read_only=true`；没有向 Unity 传输账号级 GitHub 令牌。
 - iOS 表单草稿已选 Unity 2022.3.62f3、macOS Sequoia、Xcode 16.4、Mac Standard、Apple Silicon、`main`、`com.localmerge.sandbox`、strict mode、XCArchive 和本仓库的两个回调。自动构建/定时构建均关闭。
 - 实际 UI 验证：iOS 的 `Credentials set` 为必填项，当前为空；表单拒绝保存，目标尚未创建，也未运行 iOS 构建。不是已经成功构建后只需补签名。
 - 已保存 `Gameplay Validation WebGL` 验证目标：同一 Unity 版本/macOS/Xcode，Mac Standard 免费额度，strict mode/development build，关闭自动与定时构建。用于取得真实 Unity 编译和可交互玩法证据，不替代 IPA。
-- 用户目前只有普通 Apple ID，没有会员，也没有本机 Unity 编辑器。下一步签名应先确认能否使用本人可用的 Mac/Xcode Personal Team 路径；不自动购买开发者会员，不使用未知签名服务或他人证书。
+- 用户目前只有普通 Apple ID，没有会员或可用 Mac。本机 Unity 已通过官方 CLI 合法激活并安装；不自动购买开发者会员，不使用未知签名服务或他人证书。
 
 ### 本机导出与独立 Xcode 归档路径
 
 已核实 Unity 官方 CLI 1.0.0-beta.12 支持 `license activate --personal --accept-eula`。用户本人完成登录确认，并明确同意条款；许可证激活和状态查询都成功。CLI 从 Unity 官方 CDN 下载且核对 SHA256，位于本次工作区 work/；没有执行会修改 shell 配置的安装脚本。
 
-`.github/workflows/ios-archive.yml` 已加入：只需已导出的 Unity Xcode 工程，不在 macOS Runner 上运行 Unity，因此不需要把本机许可证转移到云端。输入指定的导出 ref/ZIP，解压保留执行权限，拒绝路径穿越和符号链接，调用 Xcode 生成设备归档与明确标记的未签名 IPA。真实归档结果仍待本机导出完成后验证。
+`.github/workflows/ios-archive.yml` 已加入：只需已导出的 Unity Xcode 工程，不在 macOS Runner 上运行 Unity，因此不需要把本机许可证转移到云端。输入指定的 Release/ZIP（或导出 ref/ZIP），解压保留执行权限，拒绝路径穿越和符号链接，调用 Xcode 生成设备归档与明确标记的未签名 IPA。
 
-云端 WebGL 验证 #1 已实际执行：C# 日志只看到原版 unused-variable 警告，失败点为 Apple Silicon 无图形环境无法回退到 CPU 光照器，导出目录为空。耗时 5:48，其中构建计量 4:13，未获得可玩产物。原有 3 个场景已关闭 baked/realtime GI；没有为绕过错误关闭 strict mode。验证目标已改为免费 Windows Micro（8 vCPU/16 GB），发起 #2 复验。服务将 Windows WebGL 标为实验性，仅用于测试，不能以此声称 iOS 已构建成功。
+云端 WebGL 验证 #1 已实际执行：C# 日志只看到原版 unused-variable 警告，失败点为 Apple Silicon 无图形环境无法回退到 CPU 光照器，导出目录为空。耗时 5:48，其中构建计量 4:13，未获得可玩产物。原有 3 个场景已关闭 baked/realtime GI；没有为绕过错误关闭 strict mode。随后免费 Windows Micro（8 vCPU/16 GB）的 #2 复验成功，具体结果见下方。服务将 Windows WebGL 标为实验性，该结果不替代 iOS 设备版编译。
 
 本机编辑器安装路径限定在 work/unity-editors；许可证和官方登录状态保存在 Unity 专属配置中，已获用户许可。所有签名/许可证资料留在 work/或官方专属配置，不进入公开仓库、源码 ZIP 或 Actions artifact。
 
@@ -309,3 +308,17 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 - Unity 本次导入更新了随 2022.3.62f3 分发的 2D/Burst/Core/ShaderGraph 等间接包及其序列化默认字段；保留实际验证过的 lock 与设置，没有引入新的第三方框架。
 - Windows 云端 WebGL #2 成功（28:52 含等待，计量构建 19:37，产物 22.14 MB），源代码为 `96a6aa9`。其后本机已修复拾取/回收问题，并完成更完整的真实 Play Mode 检查。
 - 用户已单独授权把未签名 Xcode 导出作为公开 Release 构建输入上传，使用 `.github/workflows/ios-archive.yml` 的 release 模式，避免大文件进入 Git 历史；只在 macOS Runner 上运行 Xcode。
+- [公开构建资料 Release](https://github.com/xiaoyanzi191/merge-game-ipad/releases/tag/ios-export-input) 已上传真实 Xcode 导出，SHA256 为 `abd243ca10a6aa426bfc81e3c030ae2bd4a984af28552994f2249140e784d886`。
+- [macOS iOS 归档 #1](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37212679612) 成功：`macos-15-intel`、Xcode 16.4、设备 SDK、Release，Xcode archive/未签名 IPA 打包/包结构检查全部通过，作业耗时 8:55。
+- `MergeSandbox-UNSIGNED.ipa` 约 19.55 MiB，SHA256 为 `81e2a291ab500c0f10f6585d2c4215ff352d99a997e08cc7f255ce527e5177e2`。下载回本机后 CRC、IPA 结构、主程序及 UnityFramework 的 Mach-O ARM64、iPhoneOS、设备 family `[1,2]`、最低版本 15.0、iPad/通用竖屏与全屏配置均通过核对。
+- IPA 没有描述文件或代码签名目录，也没有许可证、P12、私钥等排除材料。它是真实设备程序，但不能直接安装；iOS 启动、实际触控、真机布局仍待本人签名安装后验证。没有连接或修改用户设备。
+
+### 画面素材调查
+
+当前画面仍使用上游原型素材和 2～2048 数字棋子，没有新增商业游戏的地图、装修或剧情。改善观感可以保留玩法和存档，统一替换棋子主题、背景、按钮与订单面板。
+
+- [Kenney UI Pack](https://kenney.nl/assets/ui-pack)：430 个 2D UI 元素，官方标明 CC0；适合按钮和面板，但不能单独补齐主题棋子。
+- [Merge2 Core SDK](https://github.com/ArtemVetik/com.agava.merge2)：MIT 的逻辑包，不是带完整美术的成品，换用它不能直接改善画面。
+- [GoodsSort](https://github.com/AmanitaDev/GoodsSort)：Match-3 项目，可参考布局；README 列出 GUI Pro、Odin 等资源，其源码 MIT 不等于这些素材都可直接搬用。
+
+本次只完成调查，尚未下载或混入新的美术素材。
