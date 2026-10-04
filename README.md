@@ -183,7 +183,7 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 
 ### 当前验证事实与限制
 
-本次 Linux 环境未安装 Unity，用户也尚未准备 Unity 账号。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
+本次 Linux 环境未安装 Unity 编辑器。用户已完成 Unity Dashboard 登录，并确认仅有普通 Apple ID、没有开发者会员。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
 
 本地已执行：
 
@@ -274,5 +274,16 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 
 ### 继续工作的必要输入
 
-代码和构建入口已就绪。仍须完成：本人注册/登录 Unity；选择可用的合法 Unity 构建环境（Unity 官方云端、Pro 托管 Runner 或已激活 Mac）；运行真实 Unity 验证并修复可能的导入/构建问题；提供自己的 Apple 签名条件；最后生成并安装 IPA。
+代码和构建入口已就绪；GitHub 副本已推送，官方 Unity 云项目也已创建并连接。仍须完成：运行真实 Unity 验证并修复可能的导入/构建问题；准备可行的本人 Apple 签名环境；最后生成并安装 IPA。
 目前不能将状态标记为“已获得 IPA”或“只剩 Apple 签名”。
+
+### 云端接续状态（2026-10-04）
+
+- GitHub 副本：<https://github.com/xiaoyanzi191/merge-game-ipad>。游戏改造源代码提交为 `86385c6`。
+- [GitHub Source checks](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37184999182) 已通过：仓库完整性、可移植逻辑及 IPA 防护测试三步均成功。它仍不等于 Unity 引擎编译。
+- Unity 项目名称 `Merge Game iPad`。Dashboard 显示 Free tier，包括 100 Mac Standard Minutes。未升级付费计划。
+- 公开 HTTPS 拉取被 Unity 判为不可访问，已按用户单独授权添加只读部署密钥，并通过 SSH 成功连接本副本。密钥仅作用于该仓库，GitHub 验证 `read_only=true`；没有向 Unity 传输账号级 GitHub 令牌。
+- iOS 表单草稿已选 Unity 2022.3.62f3、macOS Sequoia、Xcode 16.4、Mac Standard、Apple Silicon、`main`、`com.localmerge.sandbox`、strict mode、XCArchive 和本仓库的两个回调。自动构建/定时构建均关闭。
+- 实际 UI 验证：iOS 的 `Credentials set` 为必填项，当前为空；表单拒绝保存，目标尚未创建，也未运行 iOS 构建。不是已经成功构建后只需补签名。
+- 已保存 `Gameplay Validation WebGL` 验证目标：同一 Unity 版本/macOS/Xcode，Mac Standard 免费额度，strict mode/development build，关闭自动与定时构建。用于取得真实 Unity 编译和可交互玩法证据，不替代 IPA。
+- 用户目前只有普通 Apple ID，没有会员，也没有本机 Unity 编辑器。下一步签名应先确认能否使用本人可用的 Mac/Xcode Personal Team 路径；不自动购买开发者会员，不使用未知签名服务或他人证书。
