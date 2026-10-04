@@ -349,7 +349,9 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 - 实测发现逐帧检测可能漏掉同一轮更新中的快速按下/释放，已改为现有 Input System 的输入事件。实际 Unity Play Mode 新结果为 **122 次断言、19 种行为通过**，包含连续快速鼠标点击、触控点击和触控取消；见 `Tests/unity-playmode-result.txt`。
 - 本机浏览器实际执行连续快速生产、2→4→8 拖拽合成、订单提交/消耗；关闭本机 HTTP 服务器后重新打开，游戏仍能启动，已完成订单进度也恢复。截图保留在工作区 outputs/。这不是 iPad/Safari 真机测试。
 - `node Tests/web-offline.test.cjs`：10 项真实 JS 持久化/缓存行为检查通过，覆盖最新存档、保存失败反馈、离线资源与导航、完整下载、失败恢复及其他 scope 的缓存保护。
-- `ci/prepare-web.py` 冻结导出资源与版本；`ci/unpack-web.py` 拒绝路径穿越、重复路径、符号链接和签名资料。`.github/workflows/web-publish.yml` 使用固定到提交的 GitHub 官方 Pages actions，部署已检查的公开静态 ZIP；当前 HTTPS 发布结果待验证。
+- `ci/prepare-web.py` 冻结导出资源与版本；`ci/unpack-web.py` 拒绝路径穿越、重复路径、符号链接和签名资料。`.github/workflows/web-publish.yml` 使用固定到提交的 GitHub 官方 Pages actions，部署已检查的公开静态 ZIP。[发布作业](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37225121321)已成功，[最新源码检查](https://github.com/xiaoyanzi191/merge-game-ipad/actions/runs/37225106109)已通过。
+- HTTPS 游戏入口：<https://xiaoyanzi191.github.io/merge-game-ipad/>；[源码与离线文件 Release](https://github.com/xiaoyanzi191/merge-game-ipad/releases/tag/offline-web-v1)。公开入口在本机浏览器完成缓存并启动；通过 CDP 模拟断网后冷重载，仍能启动并进入棋盘。目标 iPad 真机验证待本人从 Safari 打开。
+- 已发布游戏源码为 `2944e03`，离线 ZIP SHA256 为 `d773e0b47d9e641005c7980c9e20c9736c5bb95b3e88722e82c7740922def630`。源码 ZIP 已更新；账号、签名资料和私有日志均未上传。
 - 原生 IPA 仍为先前 `e1c7c84` 的无签名产物，不包含本次快速点击修复；当前主要交付目标为离线网页。若以后继续原生安装，应以最新源码重新导出并由本人签名。
 
 兼容边界：[Unity 2022.3 官方文档](https://docs.unity3d.com/2022.3/Documentation/Manual/webgl-browsercompatibility.html)不保证移动设备 WebGL 支持。因此仍需在目标 iPad Safari 中检查实际触控、存档以及关闭网络后从主屏幕重开，不能用桌面模拟代替真机验证。首次添加到主屏幕后，应联网打开该主屏幕入口，等游戏下载完成，再测试离线。浏览器网站数据被清理时，本地存档和缓存也会被清理。
