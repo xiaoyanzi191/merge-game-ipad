@@ -1,3 +1,7 @@
+test_expected_xcode_root (test_artifacts.ExportUnpackChecks.test_expected_xcode_root) ... ok
+test_outside_checkout_archive_rejected (test_artifacts.ExportUnpackChecks.test_outside_checkout_archive_rejected) ... ok
+test_symlink_rejected (test_artifacts.ExportUnpackChecks.test_symlink_rejected) ... ok
+test_zip_parent_traversal_rejected (test_artifacts.ExportUnpackChecks.test_zip_parent_traversal_rejected) ... ok
 test_installer_rejects_unsigned_before_device_access (test_artifacts.PackageChecks.test_installer_rejects_unsigned_before_device_access) ... ok
 test_missing_executable_rejected (test_artifacts.PackageChecks.test_missing_executable_rejected) ... ok
 test_simulator_rejected (test_artifacts.PackageChecks.test_simulator_rejected) ... ok
@@ -5,6 +9,6 @@ test_unsigned_not_accepted_as_signed (test_artifacts.PackageChecks.test_unsigned
 test_unsigned_structure (test_artifacts.PackageChecks.test_unsigned_structure) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 0.239s
+Ran 9 tests in 0.780s
 
 OK

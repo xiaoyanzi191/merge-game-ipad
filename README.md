@@ -183,14 +183,14 @@ MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween �
 
 ### 当前验证事实与限制
 
-本次 Linux 环境未安装 Unity 编辑器。用户已完成 Unity Dashboard 登录，并确认仅有普通 Apple ID、没有开发者会员。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
+用户已完成 Unity Dashboard 和本机官方 CLI 登录，确认符合 Personal 条件并同意条款；Personal 激活及 license status 已成功。Unity 2022.3.62f3/iOS 模块正在安装到项目 work/。用户仅有普通 Apple ID，没有开发者会员或可用 Mac。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
 
 本地已执行：
 
 - `python3 ci/check-project.py`：38 项仓库/资源/版本/构建脚本检查通过，见 [原始结果](Tests/project-result.txt)。
 - `dotnet run --project Tests/Portable/Portable.csproj -- .`：34 项检查通过，见 [原始结果](Tests/portable-result.txt)。编译并执行生产器、合成条件、订单匹配、任务模型、DI 和布局计算的真实源文件；Unity 引擎对象由轻量替身提供。
 - 上述检查还使用 Roslyn 按 C# 9、Editor/iOS 两组条件符号解析所有 Assets C# 文件；**这是语法检查，不是完整 Unity 编译**。
-- `python3 -m unittest discover -s Tests -p 'test_*.py' -v`：5 项打包防护测试通过，见 [原始结果](Tests/artifact-result.txt)。测试使用临时合成结构，不生成可安装游戏 IPA，也不连接设备。
+- `python3 -m unittest discover -s Tests -p 'test_*.py' -v`：9 项打包/解压防护测试通过，见 [原始结果](Tests/artifact-result.txt)。测试使用临时合成结构，不生成可安装游戏 IPA，也不连接设备。
 - `git diff --check`、工作流 YAML 解析、3 个 Bash 构建脚本语法检查通过。
 - 布局数值验证覆盖 768×1024、810×1080、834×1194、820×1180、1024×1366、744×1133，以及 390×844。这里使用逻辑点验证棋盘与点击尺寸；实际 Unity 渲染、字体、触控、多指取消和真机安全区尚待验证。
 
@@ -287,3 +287,15 @@ python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEV
 - 实际 UI 验证：iOS 的 `Credentials set` 为必填项，当前为空；表单拒绝保存，目标尚未创建，也未运行 iOS 构建。不是已经成功构建后只需补签名。
 - 已保存 `Gameplay Validation WebGL` 验证目标：同一 Unity 版本/macOS/Xcode，Mac Standard 免费额度，strict mode/development build，关闭自动与定时构建。用于取得真实 Unity 编译和可交互玩法证据，不替代 IPA。
 - 用户目前只有普通 Apple ID，没有会员，也没有本机 Unity 编辑器。下一步签名应先确认能否使用本人可用的 Mac/Xcode Personal Team 路径；不自动购买开发者会员，不使用未知签名服务或他人证书。
+
+### 本机导出与独立 Xcode 归档路径
+
+已核实 Unity 官方 CLI 1.0.0-beta.12 支持 `license activate --personal --accept-eula`。用户本人完成登录确认，并明确同意条款；许可证激活和状态查询都成功。CLI 从 Unity 官方 CDN 下载且核对 SHA256，位于本次工作区 work/；没有执行会修改 shell 配置的安装脚本。
+
+`.github/workflows/ios-archive.yml` 已加入：只需已导出的 Unity Xcode 工程，不在 macOS Runner 上运行 Unity，因此不需要把本机许可证转移到云端。输入指定的导出 ref/ZIP，解压保留执行权限，拒绝路径穿越和符号链接，调用 Xcode 生成设备归档与明确标记的未签名 IPA。真实归档结果仍待本机导出完成后验证。
+
+云端 WebGL 验证 #1 已实际执行：C# 日志只看到原版 unused-variable 警告，失败点为 Apple Silicon 无图形环境无法回退到 CPU 光照器，导出目录为空。耗时 5:48，其中构建计量 4:13，未获得可玩产物。原有 3 个场景已关闭 baked/realtime GI；没有为绕过错误关闭 strict mode。验证目标已改为免费 Windows Micro（8 vCPU/16 GB），发起 #2 复验。服务将 Windows WebGL 标为实验性，仅用于测试，不能以此声称 iOS 已构建成功。
+
+本机编辑器安装路径限定在 work/unity-editors；许可证和官方登录状态保存在 Unity 专属配置中，已获用户许可。所有签名/许可证资料留在 work/或官方专属配置，不进入公开仓库、源码 ZIP 或 Actions artifact。
+
+参考：[Unity 官方 CLI 安装与登录](https://docs.unity.com/en-us/unity-cli/use-unity-cli)、[官方许可命令](https://github.com/Unity-Technologies/skills/blob/main/skills/unity-cli/references/auth-license-cloud.md)。

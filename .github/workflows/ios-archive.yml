@@ -1,0 +1,54 @@
+name: iOS archive from exported project
+on:
+  workflow_dispatch:
+    inputs:
+      export_ref:
+        description: Repository ref containing the reviewed unsigned Unity Xcode export
+        required: true
+      export_zip:
+        description: ZIP path on the export ref
+        required: true
+        default: ios-export.zip
+permissions:
+  contents: read
+concurrency:
+  group: ios-archive-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - name: Check out build scripts
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: source
+          persist-credentials: false
+      - name: Check out the reviewed export
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.export_ref }}
+          path: export
+          persist-credentials: false
+      - name: Unpack Unity Xcode export
+        working-directory: source
+        env:
+          EXPORT_ZIP: ${{ inputs.export_zip }}
+        run: |
+          test -d "$DEVELOPER_DIR"
+          python3 ci/unpack-ios-export.py ../export "$EXPORT_ZIP" Builds/iOS
+      - name: Build device archive and unsigned IPA
+        working-directory: source
+        run: bash ci/package-ios.sh unsigned
+      - name: Upload IPA and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-unsigned-${{ github.run_number }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            source/Builds/artifacts/
+            source/Builds/*.log

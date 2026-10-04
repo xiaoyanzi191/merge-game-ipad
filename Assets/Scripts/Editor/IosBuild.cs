@@ -30,6 +30,7 @@ namespace LocalMerge.Editor
             PlayerSettings.iOS.targetOSVersionString = "15.0";
             PlayerSettings.iOS.requiresFullScreen = true;
             PlayerSettings.iOS.appleEnableAutomaticSigning = false;
+            EditorUserBuildSettings.symlinkSources = false; // Export is copied to a separate macOS runner.
             var path = Path.GetFullPath(Environment.GetEnvironmentVariable("IOS_BUILD_PATH") ?? "Builds/iOS");
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             if (scenes.Length != 3 || !scenes[0].EndsWith("LoadScene.unity"))
