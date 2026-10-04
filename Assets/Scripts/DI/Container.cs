@@ -6,6 +6,7 @@ namespace DI
     public class Container
     {
         private readonly Dictionary<Type, Func<object>> _bindings = new();
+        private readonly HashSet<object> _initialized = new();
 
         public void BindAsSingle<T>(Func<T> factory) where T : class
         {
@@ -43,7 +44,7 @@ namespace DI
 
         private void InitializeIfPreInitializable(object instance)
         {
-            if (instance is IPreInitializable preInit)
+            if (instance is IPreInitializable preInit && _initialized.Add(instance))
             {
                 preInit.PreInitialize();
             }

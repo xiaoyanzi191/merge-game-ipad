@@ -25,6 +25,7 @@ namespace Core.Tasks
         {
             _goalUIIndex = 0;
             DoneButton.transform.localScale = Vector3.zero;
+            DoneButton.interactable = false;
 
             _matchedAppliances = new Dictionary<GoalUI, Appliance>();
             ActiveGoals = new List<GoalUI>();
@@ -89,7 +90,7 @@ namespace Core.Tasks
 
         private void CheckAllGoalsCompleted()
         {
-            if (_matchedAppliances.Count == ActiveGoals.Count)
+            if (ActiveGoals.Count > 0 && _matchedAppliances.Count == ActiveGoals.Count)
             {
                 SetDoneButton(true);
             }
@@ -101,6 +102,7 @@ namespace Core.Tasks
 
         private void SetDoneButton(bool isDone)
         {
+            DoneButton.interactable = isDone;
             DoneButton.transform.DOKill();
 
             if (isDone)

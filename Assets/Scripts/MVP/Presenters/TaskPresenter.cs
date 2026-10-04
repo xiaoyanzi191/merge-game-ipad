@@ -25,6 +25,7 @@ namespace MVP.Presenters
 
         private List<TaskUI> _activeTasks = new List<TaskUI>();
         private GridPawn[,] _grid;
+        private readonly HashSet<int> _completingTasks = new HashSet<int>();
 
         public TaskPresenter(IGridModel gridModel, DisappearEffectHandler disappearEffectHandler,
             GridPawnFactoryHandler gridPawnFactoryHandler, ITaskModel taskModel,
@@ -64,11 +65,24 @@ namespace MVP.Presenters
                 return;
             }
 
-            DestroyAppliances(appliancesToDestroy);
+            if (_completingTasks.Contains(taskID)) return;
+            // Revalidate immediately: another order may have consumed a shared item.
+            var goals = taskToComplete.ActiveGoals.Select(ui => ui.Goal).ToList();
+            var currentMatches = TaskRequirementMatcher.Match(_grid, goals);
+            if (currentMatches == null)
+            {
+                UpdateTasks();
+                return;
+            }
+            _completingTasks.Add(taskID);
+            taskToComplete.CanvasGroup.interactable = false;
+            DestroyAppliances(currentMatches);
+            UpdateTasks();
             await AnimateCompletedTask(taskToComplete);
             _activeTasks.Remove(taskToComplete);
             _taskUIFactory.DestroyObj(taskToComplete);
             _taskModel.CompleteTask(taskID);
+            _completingTasks.Remove(taskID);
             LoadNextTask().Forget();
             UpdateTasks();
         }
@@ -94,8 +108,8 @@ namespace MVP.Presenters
         private void HandleApplianceDestruction(GridPawn pawn)
         {
             _disappearEffectHandler.PlayDisappearEffect(pawn.transform.position, ColorType.Green).Forget();
-            _gridPawnFactoryHandler.DestroyPawn(pawn);
             _gridModel.UpdateGridPawn(pawn, true);
+            _gridPawnFactoryHandler.DestroyPawn(pawn);
             pawn.PawnEffect.SetFocus(false);
         }
 
@@ -138,13 +152,26 @@ namespace MVP.Presenters
 
         public void UpdateTasks()
         {
+            foreach (var pawn in _grid)
+                if (pawn is Appliance appliance) appliance.PawnEffect.SetGlowing(false);
+
             foreach (var taskUI in _activeTasks)
             {
+                if (_completingTasks.Contains(taskUI.TaskID)) continue;
+                var reserved = new HashSet<GridPawn>();
                 foreach (var goalUI in taskUI.ActiveGoals)
                 {
-                    var goalPawn =
-                        GridPawnFinderHelper.FindGridPawn(_grid, goalUI.Goal.ApplianceType, goalUI.Goal.Level);
-                    taskUI.MatchGoal(goalUI, goalPawn);
+                    GridPawn match = null;
+                    foreach (var pawn in _grid)
+                    {
+                        if (pawn is Appliance && pawn.Type.Equals(goalUI.Goal.ApplianceType) &&
+                            pawn.Level == goalUI.Goal.Level && reserved.Add(pawn))
+                        {
+                            match = pawn;
+                            break;
+                        }
+                    }
+                    taskUI.MatchGoal(goalUI, match);
                 }
             }
         }

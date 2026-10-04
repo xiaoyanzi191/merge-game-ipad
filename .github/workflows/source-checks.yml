@@ -1,0 +1,19 @@
+name: Source checks
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - run: python3 ci/check-project.py
+      - run: dotnet run --project Tests/Portable/Portable.csproj -- .
+      - run: python3 -m unittest discover -s Tests -p "test_*.py" -v

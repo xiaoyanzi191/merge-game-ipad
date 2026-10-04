@@ -125,7 +125,9 @@ namespace MVP.Presenters
 
         private void OnReleased()
         {
-            if (_activePawn == null || !_inventoryView.InventoryButton.IsEntered) return;
+            if (_activePawn == null || !_activePawn.gameObject.activeInHierarchy ||
+                _gridModel.Grid[_activePawn.Coordinate.x, _activePawn.Coordinate.y] != _activePawn ||
+                !_inventoryView.InventoryButton.ContainsPointer(UserInput.PointerPosition)) return;
 
             PlayReleaseEffects();
             AddPawnToInventory();

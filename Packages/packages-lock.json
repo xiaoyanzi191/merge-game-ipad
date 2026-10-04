@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.cysharp.unitask": {
-      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#8042b29ff87dd5506d7aad72bd6d8d7405985f27",
       "depth": 0,
       "source": "git",
       "dependencies": {},

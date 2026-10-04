@@ -1,5 +1,6 @@
 using MVP.Views.Interface;
 using UnityEngine;
+using UIExtensions;
 
 namespace MVP.Views
 {
@@ -11,20 +12,13 @@ namespace MVP.Views
         [field: SerializeField] public Vector2 GridTopLeftMargin { get; private set; }
         [field: SerializeField] public Vector2 GridPadding { get; private set; }
 
-        private const float CamScalingFactor = 12f; // Scaling factor
-
         [field: SerializeField] public Camera Cam { get; private set; }
-
-        private float _camDefaultSize;
-
-        private void Awake()
-        {
-            _camDefaultSize = (float)Screen.width / Screen.height;
-        }
+        private bool _ready;
+        private Rect _safeArea;
+        private Vector2Int _screenSize;
 
         public void CalculateGridSize(Vector2Int gridSize)
         {
-            ResetCamScale();
             var cellHeight = CellSize.y;
             var cellWidth = CellSize.x;
 
@@ -41,15 +35,28 @@ namespace MVP.Views
 
         public void Scale(Vector2Int gridSize)
         {
-            ResetCamScale();
-            int gridHeight = gridSize.y;
-            const float aspectRatio = (float)9 / 16;
-            Cam.orthographicSize = (gridHeight / 2f) + (CamScalingFactor * aspectRatio);
+            _ready = true;
+            FrameBoard();
         }
 
-        private void ResetCamScale()
+        private void LateUpdate()
         {
-            Cam.orthographicSize = _camDefaultSize;
+            if (_ready && (_safeArea != Screen.safeArea || _screenSize.x != Screen.width || _screenSize.y != Screen.height))
+                FrameBoard();
+        }
+
+        private void FrameBoard()
+        {
+            _safeArea = Screen.safeArea;
+            _screenSize = new Vector2Int(Screen.width, Screen.height);
+            var viewport = TabletLayoutMath.BoardArea(_safeArea, Screen.width, Screen.height);
+            var bounds = GridSprite.bounds;
+            Cam.orthographicSize = TabletLayoutMath.CameraSize(bounds.size, viewport, Cam.aspect);
+            var worldHeight = Cam.orthographicSize * 2f;
+            var position = Cam.transform.position;
+            position.x = bounds.center.x - (viewport.center.x - 0.5f) * worldHeight * Cam.aspect;
+            position.y = bounds.center.y - (viewport.center.y - 0.5f) * worldHeight;
+            Cam.transform.position = position;
         }
 
         private void UpdateGridTopLeftTr()

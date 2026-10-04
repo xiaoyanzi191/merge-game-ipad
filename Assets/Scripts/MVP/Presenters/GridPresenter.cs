@@ -45,6 +45,7 @@ namespace MVP.Presenters
             var gridInfo = _gridModel.GetGridInfo();
             Vector2Int gridSize = gridInfo?.GridSize ?? new Vector2Int(_gridModel.ColumnCount, _gridModel.RowCount);
 
+            GridPositionHelper.ClearPositions();
             _gridView.CalculateGridSize(gridSize);
             _gridModel.LoadGrid(gridInfo);
 
@@ -56,6 +57,7 @@ namespace MVP.Presenters
 
         public void LoadFromGridEditor(GridInfo gridInfo)
         {
+            GridPositionHelper.ClearPositions();
             _gridView.CalculateGridSize(gridInfo.GridSize);
             _gridModel.LoadGrid(gridInfo);
             _gridView.Scale(gridInfo.GridSize);
@@ -77,7 +79,7 @@ namespace MVP.Presenters
         private void GridPawnUpdated(GridPawn obj, Vector2Int? newCoord, bool isAnimOn, float animTime)
         {
             obj.SetWorldPosition(_gridView.CellSize, _gridView.GridTopLeftTr, newCoord);
-            obj.SetWorldPosition(_gridView.CellSize, _gridView.GridTopLeftTr, null, true, animTime);
+            obj.SetWorldPosition(_gridView.CellSize, _gridView.GridTopLeftTr, null, isAnimOn, animTime);
         }
     }
 }

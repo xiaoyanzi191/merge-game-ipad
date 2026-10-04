@@ -145,3 +145,134 @@ The grid state is stored in **`grid_data.json`**, allowing easy modifications.
     { "type": "ProducerB", "level": 1, "capacity": 10 }
   ]
 }
+```
+
+## iPad 本地爽玩改造（2026-10-04）
+
+本副本基于 `Fisixus/merge-game` 的 `b9ad18e75fff26dce8511e7ae45a434bb6823bcb`。
+保留 MVP、DI、对象池、3 个启动/主菜单/合成场景、8×8 棋盘、库存和 JSON/PlayerPrefs 存档。
+上文是原作者的原版说明；本节说明改造后的实际行为。
+
+### 已实现的行为
+
+- 现有 ProducerA 系列（1 个类型、1 个等级，初始棋盘上的 5 个生产器）全部可用，轻点一次即可生产。
+- 容量永不减少，无恢复计时、冷却或耗尽替换；旧存档中的零容量也按无限处理。棋盘满时仍需合成或存入库存。
+- 原版没有体力门槛；生产仍无体力扣除，并显示无限体力。新增本地金币存档，初始 `99999999`。
+- 原版没有钻石、商店、广告或内购系统，因此不新增这些系统。金币没有消费入口，也不更改订单难度或奖励规则。
+- 保留 11 个物品等级（显示数值 2～2048）及 12 张有限订单；做完全部订单后仍可继续生产和合成，但不会自动编造新订单。
+- 最高等级物品不再被轻点删除，可以用于最后一张订单。订单提交时重新匹配活跃棋盘中的物品，重复目标必须使用不同物品，防止重复提交和失效引用。
+- 竖屏适配：UI 安全区容器、自适应棋盘视野、订单卡片、库存面板及可滚动库存。保留鼠标支持，触控使用同一主指针完成拾取/拖动/释放，并在失焦或取消时收回拖动。
+- iOS 使用 IL2CPP、ARM64、设备 SDK、iPhone/iPad 通用目标，最低 iOS/iPadOS 15。保留反射 DI 所需的构造函数，防止 IL2CPP 裁剪导致启动失败。
+- DI 的共享工厂只预初始化一次，棋盘坐标缓存随场景/棋盘重载刷新。
+
+### 仓库与依赖检查
+
+仓库约 73 MB（含初始 Git 历史），不是完整商业手游：没有地图装修或旅行剧情、联网服务或完整经济系统。
+`Assets/Scripts` 为项目代码，`Assets/Prefabs` 和 `Resources` 提供棋子/订单/库存；`Assets/Scenes` 包含 3 个构建场景。
+另外包含粒子示例、TMP 资源及 SerializedCollections 示例，它们不加入构建场景。
+
+上游实际版本为 Unity **2022.3.8f1**。本副本采用同一 LTS 分支的 **2022.3.62f3**（官方 revision `96770f904ca7`），用于较新的 macOS/Xcode 构建。
+此次尚未执行 Unity 导入迁移，因此版本兼容性仍须由下面的真实 Unity 验证确认。
+依赖保持现有版本：Input System 1.6.3、URP 14.0.8、TMP 3.0.6、Test Framework 1.1.33；UniTask 固定到上游 lock 已记录的提交 `8042b29ff87dd5506d7aad72bd6d8d7405985f27`。
+未下载新的第三方游戏二进制或签名工具。保留上游已有 DOTween DLL 和 SerializedCollections 源码。
+
+根许可证为 MIT，保留原作者版权。README 原作者说明为非商业项目；本次用途为个人本地游玩。
+MIT 文件不等于所有随附素材都已独立完成版权审计；DOTween 自带版权/许可证链接，TMP 有自己的许可材料，随附粒子和人物素材没有独立的完整来源台账。本次不出售、不上架、不另行打包素材资产库。
+
+参考：[Unity 官方版本](https://unity.com/releases/editor/whats-new/2022.3.62f3)、[Unity 官方安全修复说明](https://unity.com/security/sept-2025-01/remediation)。
+
+### 当前验证事实与限制
+
+本次 Linux 环境未安装 Unity，用户也尚未准备 Unity 账号。**没有生成 Xcode 工程、真实 IPA 或进行设备安装，不能声称只剩 Apple 签名。**
+
+本地已执行：
+
+- `python3 ci/check-project.py`：38 项仓库/资源/版本/构建脚本检查通过，见 [原始结果](Tests/project-result.txt)。
+- `dotnet run --project Tests/Portable/Portable.csproj -- .`：34 项检查通过，见 [原始结果](Tests/portable-result.txt)。编译并执行生产器、合成条件、订单匹配、任务模型、DI 和布局计算的真实源文件；Unity 引擎对象由轻量替身提供。
+- 上述检查还使用 Roslyn 按 C# 9、Editor/iOS 两组条件符号解析所有 Assets C# 文件；**这是语法检查，不是完整 Unity 编译**。
+- `python3 -m unittest discover -s Tests -p 'test_*.py' -v`：5 项打包防护测试通过，见 [原始结果](Tests/artifact-result.txt)。测试使用临时合成结构，不生成可安装游戏 IPA，也不连接设备。
+- `git diff --check`、工作流 YAML 解析、3 个 Bash 构建脚本语法检查通过。
+- 布局数值验证覆盖 768×1024、810×1080、834×1194、820×1180、1024×1366、744×1133，以及 390×844。这里使用逻辑点验证棋盘与点击尺寸；实际 Unity 渲染、字体、触控、多指取消和真机安全区尚待验证。
+
+.NET 检查工具位于本次工作区的 `work/`，未加入仓库，也不修改系统 PATH。
+其首次启动自动生成的 localhost 开发证书已精确删除；后续运行禁用证书生成。未改动连接的 iPhone、配对、应用、开发者模式或信任设置。
+
+### GitHub Actions 构建入口
+
+工作流均为手动触发，不因推送自动消耗构建额度。
+
+1. **Source checks**（`.github/workflows/source-checks.yml`）：Linux Runner，执行仓库、可移植逻辑和 IPA 防护测试，无需 Unity 许可证。
+2. **iOS build**（`.github/workflows/ios-build.yml`）：默认使用 `macos-15-intel` 与 Xcode 16.4，执行真实 Unity 编译/Play Mode 验证，然后导出 iOS、Xcode archive、IPA 和 Xcode 工程压缩包。
+
+真实 Unity 验证入口：`LocalMerge.Editor.GameplaySmoke.Run`。它从原有 LoadScene 启动，通过主菜单进入棋盘，检查 100 次生产、实际屏幕坐标拾取/拖放合成、订单连点提交、存档、最高等级物品及棋盘视野。
+测试使用随机独立的应用名称隔离存档，只允许在专用 batchmode 工作目录运行；失败返回非零退出码。
+**该测试已写入，但本次未运行，不能以测试代码存在代替运行证据。**
+
+`runner=hosted-pro` 必须由本人将合法 Unity Pro 构建凭据存入仓库 Actions Secrets：`UNITY_EMAIL`、`UNITY_PASSWORD`、`UNITY_SERIAL`。
+只接受官方 Unity macOS 安装包，检查 Unity Developer ID 安装签名；授权在临时 Runner 中激活并在结束时归还。
+Unity Personal 应通过本人在 Unity Hub 中登录激活，不能把旧式免费许可证生成/转移流程当作可靠的托管 Runner 方案。
+`runner=personal-mac` 可使用本人已通过 Hub 激活、安装该 Unity 版本及 iOS 模块/Xcode 16.4 的专用 Mac Runner（标签 `self-hosted, macOS, local-merge`）；该模式不改用户钥匙串，只导出未签名包。
+
+`signing=unsigned` 生成 `MergeSandbox-UNSIGNED.ipa`：这是**待签名**容器，不能直接安装。
+`signing=signed` 使用自己的 Apple Development 证书、包含目标设备 UDID 的开发描述文件以及一致的 bundle ID：
+
+| Actions Secret | 内容 |
+| --- | --- |
+| `APPLE_TEAM_ID` | 自己的 Apple 团队 ID |
+| `IOS_CERTIFICATE_P12_BASE64` | 自己导出的 Apple Development P12，经 Base64 编码 |
+| `IOS_CERTIFICATE_PASSWORD` | P12 导出密码 |
+| `IOS_PROFILE_BASE64` | 自己的 development mobileprovision，经 Base64 编码 |
+
+证书只进入临时 Runner 钥匙串，签名输入不上传为 artifact，结束后删除。
+不要把账号密码、证书、描述文件或许可证提交到 Git，也不要粘贴到聊天中。
+普通 Apple ID 的 Personal Team 与开发者会员签名能力不同；没有合适开发描述文件时，先使用未签名导出，再在合法 Mac/Xcode 环境用自己的 Apple ID 签名。
+
+`IosBuild.Export` 可从 Unity 菜单 `Tools > Local Merge > Export iOS Xcode Project` 使用，或在已激活的 macOS Unity 中执行：
+
+```bash
+"$UNITY_EDITOR" -batchmode -quit -buildTarget iOS -projectPath "$PWD" \
+  -executeMethod LocalMerge.Editor.IosBuild.Export -logFile Builds/unity-ios.log
+bash ci/package-ios.sh unsigned
+```
+
+Linux 不能用原生 Xcode 完成 archive/Apple 签名。工作流文件已配置不代表云端 iOS 构建已经成功。
+参考：[Unity 授权](https://docs.unity.com/en-us/engine/6000.3/manual/get-started/install-and-upgrade/licenses-and-activation/managing-your-unity-license)、[GitHub 官方 Runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)、[Apple 签名与分发](https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases)。
+
+### 只有 Linux、没有 Unity Pro/Mac 时的官方云端方案
+
+使用 [Unity Build Automation](https://docs.unity.com/en-us/build-automation)，由本人先在 [Unity Dashboard](https://cloud.unity.com/) 注册/登录和创建组织/项目，核对是否符合 Personal 条件及服务的当前免费额度。
+官方 2026 定价列出每月 100 分钟 Mac Standard Compute；**不得自动开通付费或取消额度限制**，以实际账号 Dashboard 为准。
+免费额度超限会锁定构建服务，不能据此保证本项目一定在免费分钟内完成。
+
+待账号可用后，连接本 GitHub 副本，配置：
+
+- 仓库根目录，分支 `main`；Unity 2022.3.62f3；iOS；Mac Standard；Xcode 16.4（若服务不提供此组合，应先确认可用的同分支版本，不盲目升级大版本）。
+- 关闭 Auto-build；先手动构建一次。保留免费计划/构建分钟上限，不自动授权计费。
+- 设置环境变量 `IOS_BUNDLE_ID` 为自己的签名标识。
+- Pre-export method：`LocalMerge.Editor.CloudBuildHooks.PreExport`；Post-export method：`LocalMerge.Editor.CloudBuildHooks.PostExport`。
+- 该官方云端服务的 iOS 签名配置需自己的 Apple 证书和描述文件；服务中提交这些敏感材料前，由本人授权/完成账号操作。
+- 这些云端回调会配置 portrait/ARM64/iOS 15 并验证资源；不等于运行 GitHub 工作流中的 Play Mode 验证。
+
+参考：[Unity 官方免费计划](https://docs.unity.com/en-us/devops/pricing/free-plan)、[当前定价](https://unity.com/products)、[iOS 云构建要求](https://docs.unity.com/en-us/build-automation/basic-build-configuration/set-up-an-ios-build-configuration)、[云端脚本回调](https://docs.unity.com/en-us/build-automation/advanced-build-configuration/run-custom-scripts-during-the-build-process)。
+
+### 签名 IPA 生成后的 Linux USB 安装
+
+当前连接的是用户声明的 iPhone；没有读取设备标识或改变设备状态。需要安装时先确认具体目标 iPhone/iPad 和 UDID，不能凭“只有一个 USB 设备”猜测。
+只用自己的合法 Apple 签名。Apple ID 登录、双重认证、设备开发者模式和“信任”由本人完成。
+
+`ci/install-signed-ipa.py` 已准备好：必须显式传入 IPA 和 UDID，未签名包在接触设备前就被拒绝。
+它检查描述文件期限、应用标识、目标 UDID 和签名元数据，然后只安装指定应用；不卸载应用、不重置设备、不更改配对、不启用开发者模式。
+需要时从 Linux 发行版的可信软件源安装 `libimobiledevice`/`ideviceinstaller`；本次未安装系统软件或启动安装脚本。
+
+```bash
+python3 ci/install-signed-ipa.py --ipa /absolute/path/game.ipa --udid TARGET_DEVICE_UDID --check-only
+# 在设备和安装范围确认后，去掉 --check-only 才会实际安装。
+```
+
+包结构/描述文件检查不能代替 Apple 信任链或真机运行验证，设备在安装时验证实际签名。
+参考：[ideviceinstaller 官方源码与用法](https://github.com/libimobiledevice/ideviceinstaller)、[Apple 开发者账号能力](https://developer.apple.com/help/account/basics/about-your-developer-account)。
+
+### 继续工作的必要输入
+
+代码和构建入口已就绪。仍须完成：本人注册/登录 Unity；选择可用的合法 Unity 构建环境（Unity 官方云端、Pro 托管 Runner 或已激活 Mac）；运行真实 Unity 验证并修复可能的导入/构建问题；提供自己的 Apple 签名条件；最后生成并安装 IPA。
+目前不能将状态标记为“已获得 IPA”或“只剩 Apple 签名”。

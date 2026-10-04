@@ -1,0 +1,39 @@
+PASS Unity project directory: Assets
+PASS Unity project directory: Packages
+PASS Unity project directory: ProjectSettings
+PASS Unity editor version and official revision pinned
+PASS UniTask manifest matches original lock commit
+PASS bootstrap/main/merge scenes exist in build order
+PASS 579 unique Unity asset GUIDs
+PASS all scripts have committed .meta files
+PASS producer capacity fixed, no recovery coroutine
+PASS production does not recycle producer; highest level survives selection
+PASS portrait + iOS device SDK + iOS 15 minimum
+PASS IL2CPP reflection constructors preserved
+PASS all 11 existing appliance levels retained
+PASS existing ProducerA series retained (no nonexistent producers promised)
+PASS valid order goal: Task9.asset level 5
+PASS valid order goal: Task9.asset level 8
+PASS valid order goal: Task1.asset level 3
+PASS valid order goal: Task3.asset level 4
+PASS valid order goal: Task3.asset level 5
+PASS valid order goal: Task10.asset level 4
+PASS valid order goal: Task10.asset level 6
+PASS valid order goal: Task10.asset level 8
+PASS valid order goal: Task5.asset level 5
+PASS valid order goal: Task5.asset level 7
+PASS valid order goal: Task7.asset level 8
+PASS valid order goal: Task2.asset level 3
+PASS valid order goal: Task2.asset level 4
+PASS valid order goal: Task4.asset level 4
+PASS valid order goal: Task4.asset level 5
+PASS valid order goal: Task4.asset level 6
+PASS valid order goal: Task11.asset level 9
+PASS valid order goal: Task11.asset level 10
+PASS valid order goal: Task8.asset level 9
+PASS valid order goal: Task12.asset level 11
+PASS valid order goal: Task6.asset level 7
+PASS all 12 original orders retained
+PASS three build shell scripts pass bash syntax checks
+PASS upstream MIT license retained
+TOTAL 38 repository checks PASS; Unity import, player rendering and iOS archive NOT verified here.

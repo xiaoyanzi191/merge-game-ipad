@@ -7,152 +7,125 @@ using UnityEngine.InputSystem;
 
 namespace Input
 {
+    // One primary pointer owns a gesture. Read touch coordinates for both picking
+    // and dragging, and produce only after a tap has finished without a drag.
     public class UserInput : MonoBehaviour
     {
         private Camera _cam;
-        private EventSystem _eventSystem;
-
-        private bool _isDragging = false;
-        private Vector2 _lastPosition;
         private GridPawn _activePawn;
-
+        private Vector2 _pressPosition;
+        private Vector2 _lastPosition;
+        private bool _dragged;
+        private bool _usingTouch;
+        private int _touchId;
         private static bool _isInputOn = true;
+        private readonly List<RaycastResult> _uiHits = new List<RaycastResult>();
+
         public static event Action<GridPawn> OnGridPawnSingleTouched;
+        // Preserve the existing presenter event contract; a single tap now produces.
         public static event Action OnGridPawnDoubleTouched;
         public static event Action OnGridPawnReleased;
+        public static Vector2 PointerPosition { get; private set; }
 
-        private IA_User _iaUser;
-        private bool _isDoubleClickedSamePawn;
+        private void Awake() => _cam = Camera.main;
 
-        private void Awake()
+        private void Update()
         {
-            _cam = Camera.main;
-            _eventSystem = EventSystem.current;
-            _iaUser = new IA_User(); // Instantiate the input actions class
-            _iaUser.Pawn.Enable(); // Enable the specific action map
+            var touch = Touchscreen.current?.primaryTouch;
+            if (touch != null && touch.press.wasPressedThisFrame && _activePawn == null)
+            {
+                _usingTouch = true;
+                _touchId = touch.touchId.ReadValue();
+                Begin(touch.position.ReadValue());
+            }
+            else if (_activePawn == null && touch?.press.isPressed != true &&
+                     Mouse.current?.leftButton.wasPressedThisFrame == true)
+            {
+                _usingTouch = false;
+                Begin(Mouse.current.position.ReadValue());
+            }
 
-            _iaUser.Pawn.SingleTouch.performed += OnSingleTouch;
-            _iaUser.Pawn.DoubleTouch.performed += OnDoubleTouch;
-            _iaUser.Pawn.Release.performed += OnRelease;
-            _iaUser.Pawn.Drag.performed += OnDrag;
-            //_iaUser.Match.Touch.performed += TouchItemNotifier; // Subscribe to the action
-        }
-
-        private void OnDisable()
-        {
-            _iaUser.Pawn.SingleTouch.performed -= OnSingleTouch;
-            _iaUser.Pawn.DoubleTouch.performed -= OnDoubleTouch;
-            _iaUser.Pawn.Release.performed -= OnRelease;
-            _iaUser.Pawn.Drag.performed -= OnDrag;
-        }
-
-        private GridPawn GetPawnAtPointer()
-        {
-            if (IsPointerOverUIObject() || !_isInputOn)
-                return null;
-
-            var hit = Physics2D.Raycast(_cam.ScreenToWorldPoint(UnityEngine.Input.mousePosition), Vector2.zero);
-            return hit && hit.transform.TryGetComponent<GridPawn>(out var gridPawn) ? gridPawn : null;
-        }
-
-        private void SetActivePawn(GridPawn newPawn)
-        {
-            if (_activePawn != null)
-                _activePawn.PawnEffect.SetFocus(false);
-
-            _activePawn = newPawn;
-        }
-
-        private void OnSingleTouch(InputAction.CallbackContext context)
-        {
-            var newPawn = GetPawnAtPointer();
-            _isDoubleClickedSamePawn = (newPawn != null && newPawn.Equals(_activePawn));
-
-            SetActivePawn(newPawn);
             if (_activePawn == null) return;
+            if (!_isInputOn || !_activePawn.gameObject.activeInHierarchy)
+            {
+                End(false);
+                return;
+            }
 
-            _activePawn.PawnEffect.SetFocus(true);
-            _isDragging = true;
+            if (_usingTouch)
+            {
+                if (touch == null || touch.touchId.ReadValue() != _touchId)
+                {
+                    End(false);
+                    return;
+                }
+                Move(touch.position.ReadValue());
+                if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
+                    End(false);
+                else if (touch.press.wasReleasedThisFrame || !touch.press.isPressed)
+                    End(true);
+            }
+            else if (Mouse.current != null)
+            {
+                Move(Mouse.current.position.ReadValue());
+                if (Mouse.current.leftButton.wasReleasedThisFrame || !Mouse.current.leftButton.isPressed)
+                    End(true);
+            }
+        }
+
+        private void Begin(Vector2 position)
+        {
+            PointerPosition = _lastPosition = _pressPosition = position;
+            if (!_isInputOn || _cam == null || IsPointerOverUI(position)) return;
+            var hit = Physics2D.Raycast(_cam.ScreenToWorldPoint(position), Vector2.zero);
+            if (!hit || !hit.transform.TryGetComponent(out _activePawn)) return;
+            _dragged = false;
             OnGridPawnSingleTouched?.Invoke(_activePawn);
-
-            //  Determine last touch position (Touchscreen or Mouse)
-            if (Touchscreen.current?.primaryTouch.press.isPressed == true)
-            {
-                _lastPosition = Touchscreen.current.primaryTouch.position.ReadValue();
-            }
-            else if (Mouse.current?.leftButton.isPressed == true)
-            {
-                _lastPosition = Mouse.current.position.ReadValue();
-            }
+            _activePawn.PawnEffect.SetFocus(true);
         }
 
+        private void Move(Vector2 position)
+        {
+            PointerPosition = position;
+            float threshold = Mathf.Max(10f, Screen.dpi > 0 ? Screen.dpi * 0.04f : 10f);
+            if (!_dragged && Vector2.Distance(position, _pressPosition) >= threshold)
+            {
+                _dragged = true;
+                _activePawn.PawnEffect.SetFocus(false); // Cancel any snap tween before dragging.
+            }
+            if (_dragged)
+            {
+                var delta = _cam.ScreenToWorldPoint(position) - _cam.ScreenToWorldPoint(_lastPosition);
+                _activePawn.transform.position += new Vector3(delta.x, delta.y, 0f);
+            }
+            _lastPosition = position;
+        }
 
-        private void OnRelease(InputAction.CallbackContext context)
+        private void End(bool allowTap)
         {
             if (_activePawn == null) return;
-
-            _isDragging = false;
-            OnGridPawnReleased?.Invoke();
-
-            //Debug.Log("Drag Stopped.");
+            if (_activePawn.gameObject.activeInHierarchy)
+            {
+                if (!allowTap)
+                    _activePawn.SetWorldPosition(Core.Helpers.GridPositionHelper.GetWorldPositionFromCoordinate(_activePawn.Coordinate));
+                OnGridPawnReleased?.Invoke();
+                if (allowTap && !_dragged && _isInputOn && !IsPointerOverUI(PointerPosition))
+                    OnGridPawnDoubleTouched?.Invoke();
+            }
+            _activePawn = null;
         }
 
-        private void OnDrag(InputAction.CallbackContext context)
+        private void OnDisable() => End(false);
+        private void OnApplicationFocus(bool focused) { if (!focused) End(false); }
+        private void OnApplicationPause(bool paused) { if (paused) End(false); }
+        public static void SetInputState(bool isInputOn) => _isInputOn = isInputOn;
+
+        private bool IsPointerOverUI(Vector2 position)
         {
-            if (_activePawn == null || !_isDragging) return;
-            _activePawn.PawnEffect.SetFocus(false);
-
-            Vector2 currentPosition = context.ReadValue<Vector2>();
-
-            var pawnPos = _activePawn.transform.position;
-            Vector3 worldStart = _cam.ScreenToWorldPoint(new Vector3(_lastPosition.x, _lastPosition.y, pawnPos.z));
-            Vector3 worldCurrent =
-                _cam.ScreenToWorldPoint(new Vector3(currentPosition.x, currentPosition.y, pawnPos.z));
-
-            Vector3 worldDelta = worldCurrent - worldStart;
-
-            // Move the active pawn
-            pawnPos += worldDelta;
-            _activePawn.transform.position = pawnPos;
-
-            _lastPosition = currentPosition;
-            //Debug.Log($"Dragging... New Position: {_activePawn.transform.position}");
-        }
-
-        private void OnDoubleTouch(InputAction.CallbackContext context)
-        {
-            //Debug.Log("Double Tap Detected!");
-            if (!_isDoubleClickedSamePawn) return;
-            OnGridPawnDoubleTouched?.Invoke();
-        }
-
-        public static void SetInputState(bool isInputOn)
-        {
-            _isInputOn = isInputOn;
-        }
-
-        private bool IsPointerOverUIObject()
-        {
-            // Create PointerEventData for the current event system
-            PointerEventData eventData = new PointerEventData(_eventSystem);
-
-#if UNITY_EDITOR || UNITY_STANDALONE
-            // Use mouse position for PC builds and the Unity editor
-            eventData.position = UnityEngine.Input.mousePosition;
-#else
-        // Use touch position for mobile devices
-        if (UnityEngine.Input.touchCount > 0)
-            eventData.position = UnityEngine.Input.GetTouch(0).position;
-        else
-            return false;
-#endif
-
-            // Perform a raycast and check if any UI elements were hit
-            List<RaycastResult> results = new List<RaycastResult>();
-            _eventSystem.RaycastAll(eventData, results);
-
-            // Return true if any UI elements were hit, false otherwise
-            return results.Count > 0;
+            if (EventSystem.current == null) return false;
+            _uiHits.Clear();
+            EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = position }, _uiHits);
+            return _uiHits.Count > 0;
         }
     }
 }

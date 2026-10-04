@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable><LangVersion>9.0</LangVersion></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Core/GridPawns/Producer.cs" Link="Production/Producer.cs" />
+    <Compile Include="../../Assets/Scripts/Core/GridPawns/Enum/*.cs" Link="Production/%(Filename).cs" />
+    <Compile Include="../../Assets/Scripts/Core/GridPawns/Data/*.cs" Link="Production/%(Filename).cs" />
+    <Compile Include="../../Assets/Scripts/Core/Helpers/*.cs" Link="Production/%(Filename).cs" />
+    <Compile Include="../../Assets/Scripts/Core/Tasks/Goal.cs" Link="Production/Goal.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Tasks/TaskSO.cs" Link="Production/TaskSO.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Tasks/TaskRequirementMatcher.cs" Link="Production/TaskRequirementMatcher.cs" />
+    <Compile Include="../../Assets/Scripts/Core/LocalResources.cs" Link="Production/LocalResources.cs" />
+    <Compile Include="../../Assets/Scripts/MVP/Models/TaskModel.cs" Link="Production/TaskModel.cs" />
+    <Compile Include="../../Assets/Scripts/MVP/Models/Interface/ITaskModel.cs" Link="Production/ITaskModel.cs" />
+    <Compile Include="../../Assets/Scripts/DI/Container.cs" Link="Production/Container.cs" />
+    <Compile Include="../../Assets/Scripts/DI/ContainerExtensions.cs" Link="Production/ContainerExtensions.cs" />
+    <Compile Include="../../Assets/Scripts/DI/IPreInitializable.cs" Link="Production/IPreInitializable.cs" />
+    <Compile Include="../../Assets/Scripts/UIExtensions/TabletLayoutMath.cs" Link="Production/TabletLayoutMath.cs" />
+    <Reference Include="Microsoft.CodeAnalysis"><HintPath>$(MSBuildSDKsPath)/../Roslyn/bincore/Microsoft.CodeAnalysis.dll</HintPath></Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp"><HintPath>$(MSBuildSDKsPath)/../Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

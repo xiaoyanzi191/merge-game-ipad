@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Core.GridPawns.Data;
 using Core.GridPawns.Effect;
@@ -14,16 +13,14 @@ namespace Core.GridPawns
         [field: SerializeField] public SpriteRenderer CapacitySprite { get; private set; }
 
         [field: SerializeField] public ProducerType ProducerType { get; set; }
-        [field: SerializeField] public int Capacity { get; set; }
+        // Old saves may contain zero capacity. Unlimited production ignores that value.
+        public int Capacity { get => int.MaxValue; set { } }
         [field: SerializeField] public ApplianceType GeneratedApplianceType { get; set; }
 
         // Override PawnEffect to return ProducerEffect
         public new ProducerEffect PawnEffect => (ProducerEffect)base.PawnEffect;
 
         private Dictionary<int, float> _generatingRatioDict { get; set; }
-        private int _maxCapacity;
-
-        private Coroutine _capacityCoroutine;
 
         public override System.Enum Type
         {
@@ -41,59 +38,13 @@ namespace Core.GridPawns
             }
 
             SpriteRenderer.sprite = producerData.ProducerSprite;
-            Capacity = producerData.Capacity;
-            _maxCapacity = Capacity;
+            if (CapacitySprite != null) CapacitySprite.enabled = false;
             GeneratedApplianceType = producerData.GeneratedApplianceType;
             _generatingRatioDict = producerData.GeneratingRatioDict;
         }
 
-        private void StartCapacityIncrease()
-        {
-            if (_capacityCoroutine == null)
-            {
-                _capacityCoroutine = StartCoroutine(IncreaseCapacityOverTime());
-            }
-        }
-
-        private void StopCapacityIncrease()
-        {
-            if (_capacityCoroutine != null)
-            {
-                StopCoroutine(_capacityCoroutine);
-                _capacityCoroutine = null;
-            }
-        }
-
-        private IEnumerator IncreaseCapacityOverTime()
-        {
-            while (Capacity < _maxCapacity)
-            {
-                yield return new WaitForSeconds(30f); // Wait 30 seconds
-
-                if (Capacity < _maxCapacity)
-                {
-                    Capacity++;
-                    //Debug.Log($"Capacity increased to: {Capacity}");
-
-                    // Stop the coroutine when MaxCapacity is reached
-                    if (Capacity >= _maxCapacity)
-                    {
-                        StopCapacityIncrease();
-                    }
-                }
-            }
-        }
-
-        public void ReduceCapacity()
-        {
-            Capacity = Mathf.Max(0, --Capacity);
-            //Debug.Log($"Capacity reduced to: {Capacity}");
-
-            if (Capacity != 0 && Capacity < _maxCapacity)
-            {
-                StartCapacityIncrease(); // Restart capacity increase if needed
-            }
-        }
+        // Kept for existing callers and save compatibility; no timer or decrement.
+        public void ReduceCapacity() { }
 
         public override string ToString()
         {

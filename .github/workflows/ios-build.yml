@@ -1,0 +1,102 @@
+name: iOS build
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: hosted-pro needs a valid Unity Pro license; personal-mac needs your Hub-activated Mac runner
+        type: choice
+        options: [hosted-pro, personal-mac]
+        default: hosted-pro
+      signing:
+        description: unsigned creates a package requiring your Apple signature; signed uses your own development profile
+        type: choice
+        options: [unsigned, signed]
+        default: unsigned
+      bundle_id:
+        description: Must match your Apple provisioning profile
+        default: com.localmerge.sandbox
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ${{ inputs.runner == 'personal-mac' && fromJSON('["self-hosted","macOS","local-merge"]') || fromJSON('["macos-15-intel"]') }}
+    timeout-minutes: 150
+    env:
+      IOS_BUNDLE_ID: ${{ inputs.bundle_id }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Check license prerequisites
+        shell: bash
+        run: |
+          if [[ '${{ inputs.runner }}' == hosted-pro ]]; then
+            [[ -n "$UNITY_EMAIL" && -n "$UNITY_PASSWORD" && -n "$UNITY_SERIAL" ]] || {
+              echo '::error::Unity Pro CI secrets are missing. Personal licenses require Hub login on your own Mac, or Unity Build Automation.'
+              exit 1
+            }
+          else
+            [[ '${{ inputs.signing }}' == unsigned ]] || {
+              echo '::error::Personal Mac mode exports unsigned. Sign in Xcode on that Mac; CI must not change your personal keychain.'
+              exit 1
+            }
+            test -x '/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity'
+            echo 'UNITY_EDITOR=/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity' >> "$GITHUB_ENV"
+          fi
+          test -d /Applications/Xcode_16.4.app
+          echo 'DEVELOPER_DIR=/Applications/Xcode_16.4.app/Contents/Developer' >> "$GITHUB_ENV"
+      - name: Install official Unity and iOS module
+        if: inputs.runner == 'hosted-pro'
+        run: bash ci/install-unity-macos.sh
+      - name: Activate your Unity Pro license
+        if: inputs.runner == 'hosted-pro'
+        run: |
+          "$UNITY_EDITOR" -batchmode -nographics -quit -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" -logFile "$RUNNER_TEMP/unity-activation.log"
+      - name: Compile and run Unity gameplay smoke tests
+        run: |
+          mkdir -p Builds
+          "$UNITY_EDITOR" -batchmode -projectPath "$GITHUB_WORKSPACE" -executeMethod LocalMerge.Editor.GameplaySmoke.Run -logFile Builds/unity-smoke.log
+          test -f Builds/smoke-result.json
+      - name: Prepare your Apple Development signing material
+        id: signing
+        if: inputs.signing == 'signed'
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+        run: bash ci/prepare-signing.sh
+      - name: Export Unity iOS Xcode project
+        run: |
+          "$UNITY_EDITOR" -batchmode -quit -buildTarget iOS -projectPath "$GITHUB_WORKSPACE" -executeMethod LocalMerge.Editor.IosBuild.Export -logFile Builds/unity-ios.log
+      - name: Archive and package IPA
+        env:
+          BUILD_SIGNING_MODE: ${{ inputs.signing }}
+        run: bash ci/package-ios.sh "$BUILD_SIGNING_MODE"
+      - name: Upload build and test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-build-${{ github.run_number }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            Builds/artifacts/
+            Builds/*.log
+            Builds/*result.json
+      - name: Return hosted license and remove signing material
+        if: always() && inputs.runner == 'hosted-pro'
+        run: |
+          if [[ -n "${UNITY_EDITOR:-}" && -x "$UNITY_EDITOR" && -n "$UNITY_SERIAL" ]]; then
+            "$UNITY_EDITOR" -batchmode -nographics -quit -returnlicense -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" -logFile "$RUNNER_TEMP/unity-return.log" || true
+          fi
+          if [[ -n "${IOS_KEYCHAIN_PATH:-}" ]]; then security delete-keychain "$IOS_KEYCHAIN_PATH" || true; fi
+          if [[ -n "${IOS_PROFILE_UUID:-}" ]]; then rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$IOS_PROFILE_UUID.mobileprovision"; fi
+          rm -rf "$RUNNER_TEMP/local-merge-signing"

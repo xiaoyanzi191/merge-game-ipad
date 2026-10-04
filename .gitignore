@@ -70,3 +70,20 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Portable validation and private signing inputs
+/Tests/Portable/bin/
+/Tests/Portable/obj/
+*.ipa
+*.p12
+*.pfx
+*.mobileprovision
+*.ulf
+.env
+
+__pycache__/
+core
+core.*
+
+# Keep the source validation project despite the upstream csproj ignore
+!/Tests/Portable/Portable.csproj

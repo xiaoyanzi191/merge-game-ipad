@@ -1,0 +1,5 @@
+<linker>
+  <!-- Constructor injection uses reflection, so preserve these small game assemblies. -->
+  <assembly fullname="Assembly-CSharp" preserve="all" />
+  <assembly fullname="Game.DI" preserve="all" />
+</linker>

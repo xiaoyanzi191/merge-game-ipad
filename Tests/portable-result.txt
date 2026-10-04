@@ -1,0 +1,35 @@
+PASS C# 9 syntax: 154 files, editor and iOS symbols (not Unity compilation)
+PASS 10,000 productions and zero-capacity legacy save stay unlimited
+PASS producer retains 80/20 level distribution, deterministic seed 42
+PASS equal type and level can merge
+PASS different levels cannot merge
+PASS maximum level cannot overflow
+PASS self merge rejected
+PASS different pawn families cannot merge
+PASS production chooses nearest empty cell
+PASS full board blocks production
+PASS duplicate order goals need distinct items
+PASS two distinct matching items fulfill two goals
+PASS revalidation rejects an item consumed by another order
+PASS max-level item fulfills final order
+PASS initial local coins and unlimited energy
+PASS wallet initialization preserves existing save
+PASS orders load by ID with finite upstream queue
+PASS order completion survives reload without duplicate completion
+PASS board position cache refreshes on scene reload
+PASS DI initializes shared factories only once
+PASS board fits safe viewport 768x1024
+PASS board cell >=44 logical points 768x1024
+PASS board fits safe viewport 810x1080
+PASS board cell >=44 logical points 810x1080
+PASS board fits safe viewport 834x1194
+PASS board cell >=44 logical points 834x1194
+PASS board fits safe viewport 820x1180
+PASS board cell >=44 logical points 820x1180
+PASS board fits safe viewport 1024x1366
+PASS board cell >=44 logical points 1024x1366
+PASS board fits safe viewport 744x1133
+PASS board cell >=44 logical points 744x1133
+PASS board fits safe viewport 390x844
+PASS board cell >=44 logical points 390x844
+TOTAL 34 checks PASS. Unity editor/player checks remain separate.

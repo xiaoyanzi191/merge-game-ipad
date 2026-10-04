@@ -62,30 +62,13 @@ namespace MVP.Presenters
             _activeSortingOrder = _activePawn.SpriteRenderer.sortingOrder;
             _activePawn.SetSortingOrder(1000, "UI");
 
-            if (ShouldDestroy(_activePawn))
-            {
-                HandlePawnDestruction(_activePawn);
-            }
-        }
-
-        private bool ShouldDestroy(GridPawn pawn)
-        {
-            return pawn is Appliance && pawn.Level == pawn.MaxLevel;
-        }
-
-        private void HandlePawnDestruction(GridPawn pawn)
-        {
-            _disappearEffectHandler.PlayDisappearEffect(pawn.transform.position, ColorType.White).Forget();
-            _gridPawnFactoryHandler.DestroyPawn(pawn);
-            _gridModel.UpdateGridPawn(pawn, true);
-
-            pawn.PawnEffect.SetFocus(false);
-            _activePawn = null;
+            // Max-level items remain available for orders (Task12 requires level 11).
         }
 
         private void OnReleased()
         {
-            if (_activePawn == null) return;
+            if (_activePawn == null || !_activePawn.gameObject.activeInHierarchy ||
+                _gridModel.Grid[_activePawn.Coordinate.x, _activePawn.Coordinate.y] != _activePawn) return;
 
             _activePawn.SetSortingOrder(_activeSortingOrder, "Pawns");
             _activePawn.PawnEffect.SetFocus(true);
@@ -145,9 +128,7 @@ namespace MVP.Presenters
 
         private bool CanMergeWith(GridPawn targetPawn)
         {
-            return _activePawn.Level < _activePawn.MaxLevel &&
-                   _activePawn.Level == targetPawn.Level &&
-                   _activePawn.Type.Equals(targetPawn.Type);
+            return MergeRules.CanMerge(_activePawn, targetPawn);
         }
 
         private void MergePawns(GridPawn targetPawn)
@@ -183,7 +164,6 @@ namespace MVP.Presenters
             if (emptyCoord == null) return; // Grid is full
 
             ProduceAppliance(producer, emptyCoord.Value);
-            HandleProducerCapacity(producer);
         }
 
         private void ProduceAppliance(Producer producer, Vector2Int emptyCoord)
@@ -191,29 +171,9 @@ namespace MVP.Presenters
             int level = producer.GetApplianceLevelToProduce();
             var appliance = _gridPawnFactoryHandler.CreateGridPawn(producer.GeneratedApplianceType, level, emptyCoord);
 
-            _gridModel.UpdateGridPawn(appliance, false, _activePawn.Coordinate, true, 0.3f);
+            _gridModel.UpdateGridPawn(appliance, false, producer.Coordinate, true, 0.3f);
             producer.ReduceCapacity();
         }
 
-        private void HandleProducerCapacity(Producer producer)
-        {
-            if (producer.Capacity > 0) return;
-
-            var newPosition = GridPositionHelper.FindRandomEmptyCoordinate(_gridModel.Grid) ?? producer.Coordinate;
-            ReplaceProducer(producer, newPosition);
-        }
-
-        private void ReplaceProducer(Producer producer, Vector2Int newPosition)
-        {
-            _activePawn.PawnEffect.SetFocus(false);
-            _activePawn = null;
-
-            _disappearEffectHandler.PlayDisappearEffect(producer.transform.position, ColorType.White).Forget();
-
-            var newProducer = _gridPawnFactoryHandler.RecycleProducer(producer, newPosition);
-            _gridModel.UpdateGridPawn(producer, true);
-            _gridModel.UpdateGridPawn(newProducer, false,
-                new Vector2Int(newPosition.x, newPosition.y - _gridModel.ColumnCount), true, 0.7f);
-        }
     }
 }

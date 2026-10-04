@@ -7,6 +7,8 @@ namespace Core.Helpers
     public static class GridPositionHelper
     {
         private static readonly Dictionary<Vector2Int, Vector3> CoordinateToWorldPosDict = new();
+        public static void ClearPositions() => CoordinateToWorldPosDict.Clear();
+
         private const float MaxDistanceThreshold = 0.7f; // Adjust as needed
 
         public static Vector3 CalculateItemWorldPosition(Vector3 gridTopLeftPosition, Vector2 longestCell,
